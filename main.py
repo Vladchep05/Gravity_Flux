@@ -50,33 +50,104 @@ list_map = {'winter_breeze': [
 
 
 def check_setting(name_setting):
+    """
+    pass
+    """
+
     with open('setting.json', 'r', encoding='utf8') as file:
         data = json.load(file)
     return data['audio'][name_setting]
 
 
-def check_screen(screen):
+def check_screen(scren):
+    """
+   pass
+   """
+
     with open('data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
-    return data['screen'][screen]
+    return data['screen'][scren]
 
 
-def card_selection_easy():
+def level_change(name) -> None:
+    """
+    pass
+    """
+
+    with open('data.json', 'r', encoding='utf8') as file:
+        data = json.load(file)
+
+    data['gameplay']['level'] = name
+
+    with open('data.json', 'w', encoding='utf8') as file:
+        json.dump(data, file, indent=2)
+
+
+def card_type_entry(type_card) -> None:
+    """
+    pass
+    """
+
+    with open('data.json', 'r', encoding='utf8') as file:
+        data = json.load(file)
+
+    data['gameplay']['type_card'] = type_card
+
+    with open('data.json', 'w', encoding='utf8') as file:
+        json.dump(data, file, indent=2)
+
+
+def card_select(name_card) -> None:
+    """
+    pass
+    """
+
+    with open('data.json', 'r', encoding='utf8') as file:
+        data = json.load(file)
+
+    data['gameplay']['name_card'] = name_card
+    with open('data.json', 'w', encoding='utf8') as file:
+        json.dump(data, file, indent=2)
+
+
+def card_selection_easy() -> None:
+    """
+    pass
+    """
+
+    level_change('easy')
+
     card_selection.creating_buttons('Безмятежная долина', 'Прогулка по роще', 'Рассветный путь')
     screen_change('levels', 'cards')
 
 
-def card_selection_normal():
+def card_selection_normal() -> None:
+    """
+    pass
+    """
+
+    level_change('normal')
+
     card_selection.creating_buttons('Перекресток ветров', 'Зеленый лабиринт', 'Скалистый склон')
     screen_change('levels', 'cards')
 
 
-def card_selection_hard():
+def card_selection_hard() -> None:
+    """
+    pass
+    """
+
+    level_change('hard')
+
     card_selection.creating_buttons('Заточенные пики', 'Тень дракона', 'Дыхание вечного')
     screen_change('levels', 'cards')
 
 
-def screen_change(screen_one, screen_two):
+def screen_change(screen_one, screen_two) -> None:
+    """
+    pass
+    """
+
     with open('data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
 
@@ -88,7 +159,11 @@ def screen_change(screen_one, screen_two):
         json.dump(data, file, indent=2)
 
 
-def start_screen():
+def start_screen() -> None:
+    """
+    pass
+    """
+
     with open('data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
 
@@ -103,11 +178,19 @@ def start_screen():
     data['screen']['character_types'] = False
     data['screen']['play'] = False
 
+    data['gameplay']['level'] = ""
+    data['gameplay']['name_card'] = ""
+    data['gameplay']['type_card'] = ""
+
     with open('data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
 
 
-def music_menu():
+def music_menu() -> None:
+    """
+    pass
+    """
+
     pygame.mixer.music.load('file_music\music_menu.mp3')
     pygame.mixer.music.set_volume(check_setting('music_volume'))
     pygame.mixer.music.play(-1)
@@ -117,7 +200,11 @@ def music_menu():
         sound.set_volume(0)
 
 
-def volume_change(value, name):
+def volume_change(value, name) -> None:
+    """
+    pass
+    """
+
     with open('setting.json', 'r', encoding='utf8') as file:
         data = json.load(file)
     data['audio'][name] = round(value, 2)
@@ -131,21 +218,33 @@ def volume_change(value, name):
         json.dump(data, file, indent=2)
 
 
-def on_off_playback_music():
+def on_off_playback_music() -> None:
+    """
+    pass
+    """
+
     if not check_setting('mute_music'):
         pygame.mixer.music.pause()
     else:
         pygame.mixer.music.unpause()
 
 
-def on_off_playback_sound():
+def on_off_playback_sound() -> None:
+    """
+    pass
+    """
+
     if not check_setting('mute_sound'):
         sound.set_volume(0)
     else:
         sound.set_volume(check_setting('sound_volume'))
 
 
-def play_sound():
+def play_sound() -> None:
+    """
+    pass
+    """
+
     sound.play()
 
 
@@ -550,6 +649,7 @@ class Card_Selection:
         self.screen = screen
 
         self.button1, self.button2, self.button3 = None, None, None
+        self.card_1, self.card_2, self.card_3 = None, None, None
 
         # Создание кнопок
         self.button4 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
@@ -561,6 +661,30 @@ class Card_Selection:
         font = pygame.font.Font("Docker.ttf", 15)
         self.text_surface = font.render('Card Selection', True, (255, 255, 255))
         self.text_rect = self.text_surface.get_rect(center=[73, 10])
+
+    def card_one(self) -> None:
+        """
+        Метод определения, записи названия выбранной карты
+        """
+
+        card_select(self.card_1)
+        self.open_card_type()
+
+    def card_two(self) -> None:
+        """
+        Метод определения, записи названия выбранной карты
+        """
+
+        card_select(self.card_2)
+        self.open_card_type()
+
+    def card_three(self) -> None:
+        """
+        Метод определения, записи названия выбранной карты
+        """
+
+        card_select(self.card_3)
+        self.open_card_type()
 
     def open_card_type(self) -> None:
         """
@@ -613,12 +737,16 @@ class Card_Selection:
         Метод добавления кнопок
         """
 
+        self.card_1 = name1
+        self.card_2 = name2
+        self.card_3 = name3
+
         self.button1 = Button([40, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name1,
-                              self.open_card_type, 18)
+                              self.card_one, 18)
         self.button2 = Button([290, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name2,
-                              self.open_card_type, 18)
+                              self.card_two, 18)
         self.button3 = Button([540, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name3,
-                              self.open_card_type, 18)
+                              self.card_three, 18)
 
 
 class Card_Type:
@@ -632,23 +760,23 @@ class Card_Type:
 
         # Создание кнопок
         self.button1 = Button([100, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Choco',
-                              self.start, 25)
+                              self.choice_choco, 25)
         self.button2 = Button([315, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Grass',
-                              self.start, 25)
+                              self.choice_grass, 25)
         self.button3 = Button([530, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Snow',
-                              self.start, 25)
+                              self.choice_snow, 25)
         self.button4 = Button([100, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Cake',
-                              self.start, 25)
+                              self.choice_cake, 25)
         self.button5 = Button([315, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Dirt',
-                              self.start, 25)
+                              self.choice_dirt, 25)
         self.button6 = Button([530, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Sand',
-                              self.start, 25)
+                              self.choice_sand, 25)
         self.button7 = Button([100, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Tundra',
-                              self.start, 25)
+                              self.choice_tundra, 25)
         self.button8 = Button([315, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Castle',
-                              self.start, 25)
+                              self.choice_castle, 25)
         self.button9 = Button([530, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Purple',
-                              self.start, 25)
+                              self.choice_purple, 25)
 
         self.button10 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
                                self.closing_window, 25)
@@ -666,8 +794,84 @@ class Card_Type:
         self.text_surface = font.render('Card Type', True, (255, 255, 255))
         self.text_rect = self.text_surface.get_rect(center=[52, 10])
 
-    def start(self) -> None:
-        print('start')
+    def choice_choco(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('choco')
+        self.open_character_types()
+
+    def choice_grass(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('grass')
+        self.open_character_types()
+
+    def choice_snow(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('snow')
+        self.open_character_types()
+
+    def choice_cake(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('cake')
+        self.open_character_types()
+
+    def choice_dirt(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('dirt')
+        self.open_character_types()
+
+    def choice_sand(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('sand')
+        self.open_character_types()
+
+    def choice_tundra(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('tundra')
+        self.open_character_types()
+
+    def choice_castle(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('castle')
+        self.open_character_types()
+
+    def choice_purple(self) -> None:
+        """
+        Метод определения и записи выбранный тип карты
+        """
+
+        card_type_entry('purple')
+        self.open_character_types()
+
+    def open_character_types(self) -> None:
+        """
+        Метод открытия окна выбора персонажа
+        """
+
+        screen_change('card_type', 'character_types')
 
     def open_setting(self) -> None:
         """
@@ -725,7 +929,7 @@ class Card_Type:
 
 
 class Character_Types:
-    def __init__(self, screen):
+    def __init__(self, screen) -> None:
         """
         Метод, который создаёт экземпляры класса и присваивает им полученные значения
         """
@@ -1047,3 +1251,5 @@ if __name__ == '__main__':
     character_types = Character_Types(screen)
 
     main()
+
+    start_screen()

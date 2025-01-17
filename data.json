@@ -1,9 +1,9 @@
 {
   "screen": {
-    "running": false,
-    "past_position": "running",
-    "fl_zastavka": false,
-    "fl_menu": true,
+    "running": true,
+    "past_position": "fl_zastavka",
+    "fl_zastavka": true,
+    "fl_menu": false,
     "settings": false,
     "levels": false,
     "cards": false,
