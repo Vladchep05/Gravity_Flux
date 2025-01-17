@@ -1,8 +1,8 @@
 {
   "audio": {
-    "music_volume": 0.26,
-    "sound_volume": 0.5,
-    "mute_music": false,
+    "music_volume": 0.2,
+    "sound_volume": 0.05,
+    "mute_music": true,
     "mute_sound": true
   }
 }

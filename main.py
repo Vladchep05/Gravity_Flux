@@ -1,6 +1,6 @@
 import json
 import math
-from random import randint
+from random import randint, random
 
 import pygame
 
@@ -49,35 +49,6 @@ list_map = {'winter_breeze': [
 }
 
 
-def main(screen, zastavka, main_menu):
-    pygame.mixer.music.load("file_music\intro.mp3")
-    pygame.mixer.music.set_volume(0.1)
-    pygame.mixer.music.play(1)
-
-    fps = 60
-    screen.fill((0, 0, 0))
-    clock = pygame.time.Clock()
-    start_time = pygame.time.get_ticks()
-    while check_screen('running'):
-        for event in pygame.event.get():
-            if check_screen('fl_menu'):
-                main_menu.check_event(event)
-
-        if check_screen('fl_zastavka'):
-            if pygame.time.get_ticks() - start_time >= 9200:
-                screen_change('fl_zastavka', 'fl_menu')
-                music_menu()
-
-            zastavka.draw()
-
-        elif check_screen('fl_menu'):
-            main_menu.draw()
-
-        pygame.display.update()
-        pygame.display.flip()
-        clock.tick(fps)
-
-
 def check_setting(name_setting):
     with open('setting.json', 'r', encoding='utf8') as file:
         data = json.load(file)
@@ -90,13 +61,27 @@ def check_screen(screen):
     return data['screen'][screen]
 
 
+def card_selection_easy():
+    card_selection.creating_buttons('Безмятежная долина', 'Прогулка по роще', 'Рассветный путь')
+    screen_change('levels', 'cards')
+
+
+def card_selection_normal():
+    card_selection.creating_buttons('Перекресток ветров', 'Зеленый лабиринт', 'Скалистый склон')
+    screen_change('levels', 'cards')
+
+
+def card_selection_hard():
+    card_selection.creating_buttons('Заточенные пики', 'Тень дракона', 'Дыхание вечного')
+    screen_change('levels', 'cards')
+
+
 def screen_change(screen_one, screen_two):
     with open('data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
 
     data['screen'][screen_one] = False
     data['screen'][screen_two] = True
-
     data['screen']['past_position'] = screen_one
 
     with open('data.json', 'w', encoding='utf8') as file:
@@ -112,6 +97,10 @@ def start_screen():
     data['screen']['fl_zastavka'] = True
     data['screen']['fl_menu'] = False
     data['screen']['settings'] = False
+    data['screen']['levels'] = False
+    data['screen']['cards'] = False
+    data['screen']['card_type'] = False
+    data['screen']['character_types'] = False
     data['screen']['play'] = False
 
     with open('data.json', 'w', encoding='utf8') as file:
@@ -126,6 +115,20 @@ def music_menu():
         pygame.mixer.music.pause()
     if not check_setting('mute_sound'):
         sound.set_volume(0)
+
+
+def volume_change(value, name):
+    with open('setting.json', 'r', encoding='utf8') as file:
+        data = json.load(file)
+    data['audio'][name] = round(value, 2)
+
+    if name == 'music_volume':
+        pygame.mixer.music.set_volume(data['audio']['music_volume'])
+    elif name == 'sound_volume':
+        sound.set_volume(data['audio']['sound_volume'])
+
+    with open('setting.json', 'w', encoding='utf8') as file:
+        json.dump(data, file, indent=2)
 
 
 def on_off_playback_music():
@@ -147,11 +150,25 @@ def play_sound():
 
 
 class Zastavka:
-    def __init__(self, screen):
+    """
+    Класс, реализующий окно Заставки
+    """
+
+    def __init__(self, screen) -> None:
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Координаты положения элементов
         self.coord = [[100, 100], [700, 100], [100, 500], [700, 500]]
+
+        # Цвета элементов
         self.collor = [(255, 0, 0), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
+
+        # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
+        # Сохранение координат звезды
         self.star = []
         inner_angle, outer_radius = 2 * math.pi / 10, 80 / (2 * math.sin(math.pi / 5))
         inner_radius = 80 / (2 * math.tan(math.pi / 5)) * math.tan(math.pi / 10)
@@ -160,18 +177,28 @@ class Zastavka:
             a = outer_radius if j % 2 == 0 else inner_radius
             self.star.append([a * math.cos(angle), a * math.sin(angle)])
 
+        # Создание текста, названия игры
         custom_font = pygame.font.Font('Docker.ttf', 80)
         self.text = custom_font.render('Gravity Flux', True, (0, 0, 0))
         self.text_rect = self.text.get_rect(center=(400, 300))
 
+        # Создание счётчика
         self.n = 0
 
-    def draw(self):
+    def draw(self) -> None:
+        """
+        Метод отрисовки окна заставки
+        """
+
+        # Счётчик для отрисвки
         self.n = (self.n + 1) % 5
         if self.n == 0:
+            # Изменение координат элементов
             for i in range(len(self.coord)):
                 self.coord[i][0] = max(0, min(self.coord[i][0] + randint(-200, 200), 800))
                 self.coord[i][1] = max(0, min(self.coord[i][1] + randint(-200, 200), 600))
+
+        # Отрисовка элементов
         for i in range(len(self.coord)):
             x, y = self.coord[i][0], self.coord[i][1]
             p = randint(1, 4)
@@ -181,51 +208,103 @@ class Zastavka:
             else:
                 pygame.draw.polygon(self.screen, self.collor[i], [[i[0] + x, i[1] + y] for i in self.star])
 
+        # Отображение текста
         self.screen.blit(self.text, self.text_rect)
 
 
 class Menu:
-    def __init__(self, screen, sound):
+    """
+    Класс, реализующий окно Главного меню
+    """
+
+    def __init__(self, screen, sound) -> None:
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Координаты положения молний
         self.coord = [[100, 100], [700, 100], [100, 500], [700, 500]]
+
+        # Список цветов молний
         self.collor = [(255, 0, 0), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
+
+        # Сохранение как экземпляр класса объект окна
         self.screen = screen
+
+        # Создание счётчика
         self.n = 0
+
+        # Создание кнопок
         self.button1 = Button([300, 155, 200, 50], screen, (255, 255, 255), (0, 255, 255), (105, 105, 105), 'Играть',
                               self.start_game, 30, sound)
         self.button2 = Button([300, 275, 200, 50], screen, (255, 255, 255), (0, 255, 154), (105, 105, 105), 'Настройки',
                               self.open_setting, 30, sound)
         self.button3 = Button([300, 395, 200, 50], screen, (255, 255, 255), (255, 20, 147), (105, 105, 105), 'Выход',
                               self.close, 30, sound)
+
+        # Создание текста
         font = pygame.font.Font("Docker.ttf", 15)
         self.name_screen = font.render('Gravity Flux', True, (255, 255, 255))
         self.screen_rect = self.name_screen.get_rect(center=(65, 10))
 
-    def draw(self):
+    def draw(self) -> None:
+        """
+        Метод отрисовки окна Главного меню
+        """
+
+        # Закрашивание фона в чёрный
         self.screen.fill((0, 0, 0))
+
+        # Счётчик для отрисвки
         self.n = (self.n + 1) % 50
+
+        # Изменение координат
         self.change_coordinates()
 
+        # Отображение всех молний
         for i in range(len(self.coord)):
             x, y = self.coord[i][0], self.coord[i][1]
             pygame.draw.polygon(self.screen, self.collor[i],
                                 [[x, y], [x - 48, y + 64], [x - 24, y + 64], [x - 48, y + 112], [x, y + 48],
                                  [x - 24, y + 48]])
+
+        # Отображение текста
         self.screen.blit(self.name_screen, self.screen_rect)
+
+        # Отрисовка всех кнопок
         self.button1.draw()
         self.button2.draw()
         self.button3.draw()
 
-    def start_game(self):
-        screen_change('fl_menu', 'play')
+    def start_game(self) -> None:
+        """
+        Метод начала игры
+        """
 
-    def open_setting(self):
+        screen_change('fl_menu', 'levels')
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
         screen_change('fl_menu', 'settings')
 
-    def close(self):
+    def close(self) -> None:
+        """
+        Метод закрытия игры
+        """
+
         screen_change('running', 'fl_menu')
 
-    def change_coordinates(self):
+    def change_coordinates(self) -> None:
+        """
+        Метод изменения координат молний
+        """
+
+        # Если счётчик равен нулю, то изменяются цвета и координаты молний
         if self.n == 0:
+            self.collor = sorted(self.collor, key=lambda x: random())
             self.coord[0][0] = max(48, min(self.coord[0][0] + randint(-80, 80), 300))
             self.coord[0][1] = max(0, min(self.coord[0][1] + randint(-80, 80), 188))
             self.coord[1][0] = max(548, min(self.coord[1][0] + randint(-80, 80), 800))
@@ -235,7 +314,11 @@ class Menu:
             self.coord[3][0] = max(548, min(self.coord[3][0] + randint(-80, 80), 800))
             self.coord[3][1] = max(300, min(self.coord[3][1] + randint(-80, 80), 488))
 
-    def check_event(self, event):
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
         self.button1.handle_event(event)
         self.button2.handle_event(event)
         self.button3.handle_event(event)
@@ -264,11 +347,12 @@ class Settings:
         self.button3 = Button([300, 500, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Назад',
                               self.close_seting, 30)
 
+        # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
         # Создание слайдеров
-        self.slider_music = Slider(screen, 400, 190, 300, 20, 0, 1, music_volume, 'music_volume')
-        self.slider_sound = Slider(screen, 400, 390, 300, 20, 0, 1, sound_volume, 'sound_volume')
+        self.slider_music = Slider(screen, [400, 190, 300, 20], 0, 1, music_volume, 'music_volume')
+        self.slider_sound = Slider(screen, [400, 390, 300, 20], 0, 1, sound_volume, 'sound_volume')
 
         # Создание вспомогательного текста
         self.font = pygame.font.Font(None, 28)
@@ -360,7 +444,7 @@ class Settings:
         with open('setting.json', 'w', encoding='utf8') as file:
             json.dump(data, file, indent=2)
 
-    def check(self, event) -> None:
+    def check_event(self, event) -> None:
         """
         Метод проверки событий
         """
@@ -380,10 +464,223 @@ class Settings:
         """
 
         # Определение в каком окне был пользователь, перед тем как зайти в настройки
-        if check_setting('past_position') == 'fl_menu':
-            screen_change('fl_menu', 'settings')
-        elif check_setting('past_position') == 'play':
-            screen_change('play', 'settings')
+        if check_screen('past_position') == 'fl_menu':
+            screen_change('settings', 'fl_menu')
+        elif check_screen('past_position') == 'levels':
+            screen_change('settings', 'levels')
+        elif check_screen('past_position') == 'cards':
+            screen_change('settings', 'cards')
+        elif check_screen('past_position') == 'card_type':
+            screen_change('settings', 'card_type')
+
+
+class Levels_Selection:
+    def __init__(self, screen):
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Сохранение как экземпляр класса объект окна
+        self.screen = screen
+
+        # Создание кнопок
+        self.button1 = Button([100, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), (255, 69, 0), 'Easy',
+                              card_selection_easy, 30)
+        self.button2 = Button([300, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), (255, 69, 0), 'Normal',
+                              card_selection_normal, 30)
+        self.button3 = Button([500, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), (255, 69, 0), 'Hard',
+                              card_selection_hard, 30)
+        self.button4 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+                              self.closing_window, 25)
+        self.button5 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+                              self.open_setting, 25)
+
+        # Создание текста - название окна
+        font = pygame.font.Font("Docker.ttf", 15)
+        self.text_surface = font.render('Levels', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=[32, 10])
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        screen_change('levels', 'settings')
+
+    def closing_window(self):
+        screen_change('levels', 'fl_menu')
+
+    def draw(self):
+        self.screen.fill((0, 0, 0))
+        self.button1.draw()
+        self.button2.draw()
+        self.button3.draw()
+        self.button4.draw()
+        self.button5.draw()
+        self.screen.blit(self.text_surface, self.text_rect)
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        # Проверка событий кнопок
+        self.button1.handle_event(event)
+        self.button2.handle_event(event)
+        self.button3.handle_event(event)
+        self.button4.handle_event(event)
+        self.button5.handle_event(event)
+
+
+class Card_Selection:
+    def __init__(self, screen):
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Сохранение как экземпляр класса объект окна
+        self.screen = screen
+
+        self.button1, self.button2, self.button3 = None, None, None
+
+        # Создание кнопок
+        self.button4 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+                              self.closing_window, 25)
+        self.button5 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+                              self.open_setting, 25)
+
+        # Создание текста - название окна
+        font = pygame.font.Font("Docker.ttf", 15)
+        self.text_surface = font.render('Card Selection', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=[73, 10])
+
+    def open_card_type(self):
+        screen_change('cards', 'card_type')
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        screen_change('cards', 'settings')
+
+    def closing_window(self):
+        screen_change('cards', 'levels')
+
+    def draw(self):
+        self.screen.fill((0, 0, 0))
+        self.button1.draw()
+        self.button2.draw()
+        self.button3.draw()
+        self.button4.draw()
+        self.button5.draw()
+        self.screen.blit(self.text_surface, self.text_rect)
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        # Проверка событий кнопок
+        self.button1.handle_event(event)
+        self.button2.handle_event(event)
+        self.button3.handle_event(event)
+        self.button4.handle_event(event)
+        self.button5.handle_event(event)
+
+    def creating_buttons(self, name1, name2, name3):
+        self.button1 = Button([40, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name1,
+                              self.open_card_type, 18)
+        self.button2 = Button([290, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name2,
+                              self.open_card_type, 18)
+        self.button3 = Button([540, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name3,
+                              self.open_card_type, 18)
+
+
+class Card_Type:
+    def __init__(self, screen):
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Сохранение как экземпляр класса объект окна
+        self.screen = screen
+
+        # Создание кнопок
+        self.button1 = Button([100, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Cake',
+                              self.start, 25)
+        self.button2 = Button([315, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Castle',
+                              self.start, 25)
+        self.button3 = Button([530, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Choco',
+                              self.start, 25)
+        self.button4 = Button([100, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Dirt',
+                              self.start, 25)
+        self.button5 = Button([315, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Grass',
+                              self.start, 25)
+        self.button6 = Button([530, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Purple',
+                              self.start, 25)
+        self.button7 = Button([100, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Sand',
+                              self.start, 25)
+        self.button8 = Button([315, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Snow',
+                              self.start, 25)
+        self.button9 = Button([530, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Tundra',
+                              self.start, 25)
+
+        self.button10 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+                               self.closing_window, 25)
+        self.button11 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+                               self.open_setting, 25)
+
+        # Создание текста - название окна
+        font = pygame.font.Font("Docker.ttf", 15)
+        self.text_surface = font.render('Card Type', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=[52, 10])
+
+    def start(self):
+        print('start')
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        screen_change('card_type', 'settings')
+
+    def closing_window(self):
+        screen_change('card_type', 'cards')
+
+    def draw(self):
+        self.screen.fill((0, 0, 0))
+        self.button1.draw()
+        self.button2.draw()
+        self.button3.draw()
+        self.button4.draw()
+        self.button5.draw()
+        self.button6.draw()
+        self.button7.draw()
+        self.button8.draw()
+        self.button9.draw()
+        self.button10.draw()
+        self.button11.draw()
+        self.screen.blit(self.text_surface, self.text_rect)
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        # Проверка событий кнопок
+        self.button1.handle_event(event)
+        self.button2.handle_event(event)
+        self.button3.handle_event(event)
+        self.button4.handle_event(event)
+        self.button5.handle_event(event)
+        self.button6.handle_event(event)
+        self.button7.handle_event(event)
+        self.button8.handle_event(event)
+        self.button9.handle_event(event)
+        self.button10.handle_event(event)
+        self.button11.handle_event(event)
 
 
 class Button:
@@ -402,7 +699,7 @@ class Button:
         # Флаг отслеживания наведения мыши
         self.fl = fl
 
-        # Экран отрисовки
+        # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
         # Присваивание цветов объектам
@@ -460,10 +757,12 @@ class Button:
         Класс изменяющий текст кнопок
         """
 
+        # При тексте "Выключить" на кнопке он заменяется на "Включить"
         if self.text == 'Выключить':
             self.text = 'Включить'
             self.text_surface = self.font.render(self.text, True, self.collor_text)
             self.text_rect = self.text_surface.get_rect(center=self.rect.center)
+        # При тексте "Включить" на кнопке он заменяется на "Выключить"
         elif self.text == 'Включить':
             self.text = 'Выключить'
             self.text_surface = self.font.render(self.text, True, self.collor_text)
@@ -471,59 +770,134 @@ class Button:
 
 
 class Slider:
-    def __init__(self, screen, x, y, width, height, min_value, max_value, start_value, name, sound):
+    """
+    Класс слайдера
+    """
+
+    def __init__(self, screen, coord, min_value, max_value, start_value, name) -> None:
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Название слайдера
         self.name = name
+
+        # Сохранение как экземпляр класса объект окна
         self.screen = screen
-        self.sound = sound
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
+
+        # Координаты x и y
+        self.x = coord[0]
+        self.y = coord[1]
+
+        # Ширина и высота слайдера
+        self.width = coord[2]
+        self.height = coord[3]
+
+        # Минимальное и максимальное значения
         self.min_value = min_value
         self.max_value = max_value
+
+        # Начальное значение
         self.value = start_value
-        self.slider_rect = pygame.Rect(x, y, width, height)
+
+        # Геометрия слайдера
+        self.slider_rect = pygame.Rect(coord)
+
+        # Геометрия курсора слайдера
         self.cursor_width = 10
         self.cursor_rect = pygame.Rect(self.x + (self.width * self.value) - self.cursor_width // 2, self.y,
                                        self.cursor_width, self.height)
+
+        # Флаг перемещения курсора
         self.dragging = False
 
-    def handle_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            if self.cursor_rect.collidepoint(event.pos):
-                self.dragging = True
-        elif event.type == pygame.MOUSEBUTTONUP:
-            self.dragging = False
-        elif event.type == pygame.MOUSEMOTION:
-            if self.dragging:
-                mouse_x = event.pos[0]
-                self.value = self.calculate_value(mouse_x)
-                self.value = max(self.min_value, min(self.value, self.max_value))
-                self.cursor_rect.x = self.x + (self.width * self.value) - self.cursor_width // 2
-                self.volume_change()
+    def draw(self) -> None:
+        """
+        Метод отрисовки слайдеров
+        """
 
-    def volume_change(self):
-        with open('setting.json', 'r', encoding='utf8') as file:
-            data = json.load(file)
-        data['audio'][self.name] = round(self.value, 2)
-        if self.name == 'music_volume':
-            pygame.mixer.music.set_volume(data['audio']['music_volume'])
-        elif self.name == 'sound_volume':
-            self.sound.set_volume(data['audio']['sound_volume'])
-
-        with open('setting.json', 'w', encoding='utf8') as file:
-            json.dump(data, file, indent=2)
-
-    def calculate_value(self, mouse_x):
-        position = (mouse_x - self.x) / self.width
-        return position
-
-    def draw(self):
+        # Отрисовка слайдера
         pygame.draw.rect(self.screen, (150, 150, 150), self.slider_rect)
+
+        # Отрисовка ползунка слайдера
         pygame.draw.rect(self.screen, (200, 200, 200), self.cursor_rect)
 
-    def get_value(self):
-        return self.value
+    def handle_event(self, event) -> None:
+        """
+        Метод для обработки событий мыши
+        """
+
+        # Проверка, является ли текущее событие нажатием кнопки мыши
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # Проверка, находится ли курсор мыши на ползунке слайдера
+            if self.cursor_rect.collidepoint(event.pos):
+                # Устанавливает атрибут перемещения курсора True
+                self.dragging = True
+
+        # Проверка, является ли текущее событие отпусканием кнопки мыши
+        elif event.type == pygame.MOUSEBUTTONUP:
+            # Устанавливает атрибут перемещения курсора False
+            self.dragging = False
+
+        # Проверка, является ли текущее событие перемещением мыши
+        elif event.type == pygame.MOUSEMOTION:
+            # Проверка, находится ли ползунок в режиме перетаскивания
+            if self.dragging:
+                # Получаем координату x мыши
+                mouse_x = event.pos[0]
+
+                # Вычисление относительное положение ползунка на слайдере
+                self.value = (mouse_x - self.x) / self.width
+
+                # Ограничивание значение self.value между минимальным и максимальным
+                self.value = max(self.min_value, min(self.value, self.max_value))
+                self.cursor_rect.x = self.x + (self.width * self.value) - self.cursor_width // 2
+                volume_change(self.value, self.name)
+
+
+def main():
+    global screen, zastavka, main_menu, setting, levels_selection
+
+    pygame.mixer.music.load("file_music\intro.mp3")
+    pygame.mixer.music.set_volume(0.1)
+    pygame.mixer.music.play(1)
+
+    fps = 60
+    screen.fill((0, 0, 0))
+    clock = pygame.time.Clock()
+    start_time = pygame.time.get_ticks()
+    while check_screen('running'):
+        for event in pygame.event.get():
+            if check_screen('fl_menu'):
+                main_menu.check_event(event)
+            elif check_screen('settings'):
+                setting.check_event(event)
+            elif check_screen('levels'):
+                levels_selection.check_event(event)
+            elif check_screen('cards'):
+                card_selection.check_event(event)
+            elif check_screen('card_type'):
+                card_type.check_event(event)
+
+        if check_screen('fl_zastavka'):
+            if pygame.time.get_ticks() - start_time >= 9200:
+                screen_change('fl_zastavka', 'fl_menu')
+                music_menu()
+            zastavka.draw()
+        elif check_screen('fl_menu'):
+            main_menu.draw()
+        elif check_screen('settings'):
+            setting.draw()
+        elif check_screen('levels'):
+            levels_selection.draw()
+        elif check_screen('cards'):
+            card_selection.draw()
+        elif check_screen('card_type'):
+            card_type.draw()
+
+        pygame.display.update()
+        pygame.display.flip()
+        clock.tick(fps)
 
 
 if __name__ == '__main__':
@@ -540,4 +914,12 @@ if __name__ == '__main__':
 
     main_menu = Menu(screen, sound)
 
-    main(screen, zastavka, main_menu)
+    setting = Settings(screen)
+
+    levels_selection = Levels_Selection(screen)
+
+    card_selection = Card_Selection(screen)
+
+    card_type = Card_Type(screen)
+
+    main()
