@@ -10,5 +10,10 @@
     "card_type": false,
     "character_types": false,
     "play": false
+  },
+  "gameplay": {
+    "level": "",
+    "name_card": "",
+    "type_card": ""
   }
 }

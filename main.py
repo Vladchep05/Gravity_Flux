@@ -475,7 +475,7 @@ class Settings:
 
 
 class Levels_Selection:
-    def __init__(self, screen):
+    def __init__(self, screen) -> None:
         """
         Метод, который создаёт экземпляры класса и присваивает им полученные значения
         """
@@ -507,10 +507,18 @@ class Levels_Selection:
 
         screen_change('levels', 'settings')
 
-    def closing_window(self):
+    def closing_window(self) -> None:
+        """
+        Метод закрытия окна выбора ровня сложности
+        """
+
         screen_change('levels', 'fl_menu')
 
-    def draw(self):
+    def draw(self) -> None:
+        """
+        Метод отрисовки окна
+        """
+
         self.screen.fill((0, 0, 0))
         self.button1.draw()
         self.button2.draw()
@@ -533,6 +541,190 @@ class Levels_Selection:
 
 
 class Card_Selection:
+    def __init__(self, screen) -> None:
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Сохранение как экземпляр класса объект окна
+        self.screen = screen
+
+        self.button1, self.button2, self.button3 = None, None, None
+
+        # Создание кнопок
+        self.button4 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+                              self.closing_window, 25)
+        self.button5 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+                              self.open_setting, 25)
+
+        # Создание текста - название окна
+        font = pygame.font.Font("Docker.ttf", 15)
+        self.text_surface = font.render('Card Selection', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=[73, 10])
+
+    def open_card_type(self) -> None:
+        """
+        Метод открытия окна выбора типа карты
+        """
+
+        screen_change('cards', 'card_type')
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        screen_change('cards', 'settings')
+
+    def closing_window(self) -> None:
+        """
+        Метод закрытия окна выбора карты
+        """
+
+        screen_change('cards', 'levels')
+
+    def draw(self) -> None:
+        """
+        Метод отрисовки окна
+        """
+
+        self.screen.fill((0, 0, 0))
+        self.button1.draw()
+        self.button2.draw()
+        self.button3.draw()
+        self.button4.draw()
+        self.button5.draw()
+        self.screen.blit(self.text_surface, self.text_rect)
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        # Проверка событий кнопок
+        self.button1.handle_event(event)
+        self.button2.handle_event(event)
+        self.button3.handle_event(event)
+        self.button4.handle_event(event)
+        self.button5.handle_event(event)
+
+    def creating_buttons(self, name1, name2, name3) -> None:
+        """
+        Метод добавления кнопок
+        """
+
+        self.button1 = Button([40, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name1,
+                              self.open_card_type, 18)
+        self.button2 = Button([290, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name2,
+                              self.open_card_type, 18)
+        self.button3 = Button([540, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name3,
+                              self.open_card_type, 18)
+
+
+class Card_Type:
+    def __init__(self, screen) -> None:
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Сохранение как экземпляр класса объект окна
+        self.screen = screen
+
+        # Создание кнопок
+        self.button1 = Button([100, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Choco',
+                              self.start, 25)
+        self.button2 = Button([315, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Grass',
+                              self.start, 25)
+        self.button3 = Button([530, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Snow',
+                              self.start, 25)
+        self.button4 = Button([100, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Cake',
+                              self.start, 25)
+        self.button5 = Button([315, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Dirt',
+                              self.start, 25)
+        self.button6 = Button([530, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Sand',
+                              self.start, 25)
+        self.button7 = Button([100, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Tundra',
+                              self.start, 25)
+        self.button8 = Button([315, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Castle',
+                              self.start, 25)
+        self.button9 = Button([530, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Purple',
+                              self.start, 25)
+
+        self.button10 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+                               self.closing_window, 25)
+        self.button11 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+                               self.open_setting, 25)
+
+        # Создание изображений
+        self.images = []
+        for i in range(9):
+            self.images.append(
+                [pygame.image.load(f'images/{i + 1}_1.png'), [140 + 215 * (i // 3), 40 + 140 * (i % 3)]])
+
+        # Создание текста - название окна
+        font = pygame.font.Font("Docker.ttf", 15)
+        self.text_surface = font.render('Card Type', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=[52, 10])
+
+    def start(self) -> None:
+        print('start')
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        screen_change('card_type', 'settings')
+
+    def closing_window(self) -> None:
+        """
+        Метод закрытия окна выбора типа карты
+        """
+
+        screen_change('card_type', 'cards')
+
+    def draw(self) -> None:
+        """
+        Метод отрисовки окна
+        """
+
+        self.screen.fill((0, 0, 0))
+        self.button1.draw()
+        self.button2.draw()
+        self.button3.draw()
+        self.button4.draw()
+        self.button5.draw()
+        self.button6.draw()
+        self.button7.draw()
+        self.button8.draw()
+        self.button9.draw()
+        self.button10.draw()
+        self.button11.draw()
+        self.screen.blit(self.text_surface, self.text_rect)
+
+        for i in self.images:
+            self.screen.blit(i[0], i[1])
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        # Проверка событий кнопок
+        self.button1.handle_event(event)
+        self.button2.handle_event(event)
+        self.button3.handle_event(event)
+        self.button4.handle_event(event)
+        self.button5.handle_event(event)
+        self.button6.handle_event(event)
+        self.button7.handle_event(event)
+        self.button8.handle_event(event)
+        self.button9.handle_event(event)
+        self.button10.handle_event(event)
+        self.button11.handle_event(event)
+
+
+class Character_Types:
     def __init__(self, screen):
         """
         Метод, который создаёт экземпляры класса и присваивает им полученные значения
@@ -554,89 +746,7 @@ class Card_Selection:
         self.text_surface = font.render('Card Selection', True, (255, 255, 255))
         self.text_rect = self.text_surface.get_rect(center=[73, 10])
 
-    def open_card_type(self):
-        screen_change('cards', 'card_type')
-
-    def open_setting(self) -> None:
-        """
-        Метод открытия настроек
-        """
-
-        screen_change('cards', 'settings')
-
-    def closing_window(self):
-        screen_change('cards', 'levels')
-
-    def draw(self):
-        self.screen.fill((0, 0, 0))
-        self.button1.draw()
-        self.button2.draw()
-        self.button3.draw()
-        self.button4.draw()
-        self.button5.draw()
-        self.screen.blit(self.text_surface, self.text_rect)
-
-    def check_event(self, event) -> None:
-        """
-        Метод проверки событий
-        """
-
-        # Проверка событий кнопок
-        self.button1.handle_event(event)
-        self.button2.handle_event(event)
-        self.button3.handle_event(event)
-        self.button4.handle_event(event)
-        self.button5.handle_event(event)
-
-    def creating_buttons(self, name1, name2, name3):
-        self.button1 = Button([40, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name1,
-                              self.open_card_type, 18)
-        self.button2 = Button([290, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name2,
-                              self.open_card_type, 18)
-        self.button3 = Button([540, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name3,
-                              self.open_card_type, 18)
-
-
-class Card_Type:
-    def __init__(self, screen):
-        """
-        Метод, который создаёт экземпляры класса и присваивает им полученные значения
-        """
-
-        # Сохранение как экземпляр класса объект окна
-        self.screen = screen
-
-        # Создание кнопок
-        self.button1 = Button([100, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Cake',
-                              self.start, 25)
-        self.button2 = Button([315, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Castle',
-                              self.start, 25)
-        self.button3 = Button([530, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Choco',
-                              self.start, 25)
-        self.button4 = Button([100, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Dirt',
-                              self.start, 25)
-        self.button5 = Button([315, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Grass',
-                              self.start, 25)
-        self.button6 = Button([530, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Purple',
-                              self.start, 25)
-        self.button7 = Button([100, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Sand',
-                              self.start, 25)
-        self.button8 = Button([315, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Snow',
-                              self.start, 25)
-        self.button9 = Button([530, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Tundra',
-                              self.start, 25)
-
-        self.button10 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
-                               self.closing_window, 25)
-        self.button11 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
-                               self.open_setting, 25)
-
-        # Создание текста - название окна
-        font = pygame.font.Font("Docker.ttf", 15)
-        self.text_surface = font.render('Card Type', True, (255, 255, 255))
-        self.text_rect = self.text_surface.get_rect(center=[52, 10])
-
-    def start(self):
+    def start(self) -> None:
         print('start')
 
     def open_setting(self) -> None:
@@ -644,24 +754,26 @@ class Card_Type:
         Метод открытия настроек
         """
 
-        screen_change('card_type', 'settings')
+        screen_change('character_types', 'settings')
 
-    def closing_window(self):
-        screen_change('card_type', 'cards')
+    def closing_window(self) -> None:
+        """
+        Метод закрытия окна выбора персонажа
+        """
 
-    def draw(self):
+        screen_change('character_types', 'card_type')
+
+    def draw(self) -> None:
+        """
+        Метод отрисовки окна
+        """
+
         self.screen.fill((0, 0, 0))
         self.button1.draw()
         self.button2.draw()
         self.button3.draw()
         self.button4.draw()
         self.button5.draw()
-        self.button6.draw()
-        self.button7.draw()
-        self.button8.draw()
-        self.button9.draw()
-        self.button10.draw()
-        self.button11.draw()
         self.screen.blit(self.text_surface, self.text_rect)
 
     def check_event(self, event) -> None:
@@ -675,12 +787,18 @@ class Card_Type:
         self.button3.handle_event(event)
         self.button4.handle_event(event)
         self.button5.handle_event(event)
-        self.button6.handle_event(event)
-        self.button7.handle_event(event)
-        self.button8.handle_event(event)
-        self.button9.handle_event(event)
-        self.button10.handle_event(event)
-        self.button11.handle_event(event)
+
+    def creating_buttons(self, name1, name2, name3) -> None:
+        """
+        Метод добавления кнопок
+        """
+
+        self.button1 = Button([40, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name1,
+                              self.start, 18)
+        self.button2 = Button([290, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name2,
+                              self.start, 18)
+        self.button3 = Button([540, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name3,
+                              self.start, 18)
 
 
 class Button:
@@ -878,6 +996,8 @@ def main():
                 card_selection.check_event(event)
             elif check_screen('card_type'):
                 card_type.check_event(event)
+            elif check_screen('character_types'):
+                card_type.check_event(event)
 
         if check_screen('fl_zastavka'):
             if pygame.time.get_ticks() - start_time >= 9200:
@@ -894,6 +1014,8 @@ def main():
             card_selection.draw()
         elif check_screen('card_type'):
             card_type.draw()
+        elif check_screen('character_types'):
+            character_types.draw()
 
         pygame.display.update()
         pygame.display.flip()
@@ -921,5 +1043,7 @@ if __name__ == '__main__':
     card_selection = Card_Selection(screen)
 
     card_type = Card_Type(screen)
+
+    character_types = Character_Types(screen)
 
     main()
