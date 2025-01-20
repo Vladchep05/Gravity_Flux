@@ -1,12 +1,12 @@
 {
   "screen": {
     "running": true,
-    "past_position": "cards",
-    "fl_zastavka": false,
+    "past_position": "fl_zastavka",
+    "fl_zastavka": true,
     "transition": false,
     "fl_menu": false,
     "settings": false,
-    "levels": true,
+    "levels": false,
     "cards": false,
     "card_type": false,
     "character_types": false,

@@ -4,59 +4,19 @@ from random import randint, random
 
 import pygame
 
-list_map = {'winter_breeze': [
-    '                          GCCCCCCCF          GCCCCCF                     GCCCCF                          ',
-    '                          GCCCCCCCF          GCCCCCH                     GCCCCF                          ',
-    '                          ICCCCCCCF          GCCCCF                      GCCCCF                          ',
-    '                           GCCCCCCF          GCCCCF                      IJJJJH                          ',
-    '                           GKCCCCCF          IJJJJH                                                      ',
-    '                           IJJJJJJH                                                                      ',
-    '                                                                                                         ',
-    '                                                                                                         ',
-    '                                                      DAAAAE                                             ',
-    '                                                     DCCCCCCE                                            ',
-    '                                          DABBE     DCCCCCCCCE                                           ',
-    '                                         DCCCCF  DBBCCCCCCCCCCAAE                                        ',
-    '             DABBAE                    DACCCCCF  GCCCCCCCCCCCCCCCE                                       ',
-    '            DCCCCCCE                  DCCCCCCCF  GCCCCCCCCCCCCCCCCE                                      ',
-    '           DCCCCCCCCE                DCCCCCCCCF  GCCCCCCCCCCCCCCCCCE         DAABE        DABBBE     DAAA',
-    '          DCCCCCCCCCCBAAAAAAE    DAAACCCCCCCCCF  GCCCCCCCCCCCCCCCCCCEABBBAE  GCCCCE      DCCCCCCE   DCCCC',
-    'BBBBBBBBBBCCCCCCCCCCCCCCCCCCF    GCCCCCCCCCCCCF  GCCCCCCCCCCCCCCCCCCCCCCCCF  GCCCCCE    DCCCCCCCCAAACCCCC',
-    'CCCCCCCCCCCCCCCCCCCCCCCCCCCCF    GCCCCCCCCCCCCF  GCCCCCCCCCCCCCCCCCCCCCCCCF  GCCCCCCBBAACCCCCCCCCCCCCCCCC',
-    'CCCCCCCCCCCCCCCCCCCCCCCCCCCCF    GCCCCCCCCCCCCF  GCCCCCCCCCCCCCCCCCCCCCCCCF  GCCCCCCCCCCCCCCCCCCCCCCCCCCC'
-],
-    'winter_kingdom': [
-        '                                                                       GBBBBBBH                       FMLBBBBBBH                GBBBBBBBBBBBBH                                FMLBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBH    GBBBBBBBH    GBBBBBBBBBBBBBBBBBBBBBBBBBBBH       ',
-        '                                                                       GBBBBBBH                         FLBBBBBJAD           CAAIBBBBBBBBBBBBH                                  GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBH    GBBBBBBBH    GBBBBBBBBBBBBBBBBBBBBBBBBBBBH       ',
-        '                                                                       FMMMMMME                          GBBBBBBBJAAAAAAAAAAAIBBKMMMMMMMMMMMME                                  FMMMMMMMMMMMMMMMMMMMLBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBH    GBBBBBBBH    GBBBBBBBBBBBBBBBBBBBBBBBBBBBH       ',
-        '                                                                                                         FMMMMMMMLBBBBBBBBBBKMMME                                                                   GBBBBBBBBBBBBBBBBBBBBBBBKMMMMMMMMMMMMME    FMMMMMMMM    GBBBBBBBBBBBBBBBBBBBBBBBBBBBH       ',
-        '                                                                                                                 FMLBBBBBKMME                                                               M      CAIBBBBBBBBBBBBBBBBBBBBBBJD                              FMMMMMMLBBBBBBBBBBBBBBBBBBBBH       ',
-        '                                                                                                                   FMMMMME                                                                     M  CIBBBBBBBBBBBBBBBBBBBBBBBBBJAD                                   FMLBBBBBBBBBBBBBBBBBBH       ',
-        '                                                                                                                                                                                                  FMMMMMMMMLBBBBBBBBBBBBBBBBBBBJD           CD                       FLBBBBBBBBBBBBBBKME        ',
-        '                                                                                                                                                                                                           FMLBBBKMMMMLBBBBBBBBBJD          FE                        FMMMLBBBBBBBBKMME         ',
-        '                                                                                                                                                                                                             FMMME    FMMMMMMMMMME                                        FMMMMMMME             ',
-        '                                                                  CAAAAAD    CD                                                                                    CAAAAAD                                                                                                                      ',
-        '                                                               CAAIBBBBBH    GJD                                                                                CAAIBBBBBJD                                                                                                                     ',
-        '                                                              CIBBBBBBBBH    GBJAAAAAAAD                                                                    CAAABBBBBBBBBBJD                                                                                                                    ',
-        '                                                      CAAAAAAAIBBBBBBBBBH    GBBBBBBBBBJAD            CAAAD                               CAAD             CIBBBBBBBBBBBBBBJAAAD                                                                                                                ',
-        '                                                    CAIBBBBBBBBBBBBBBBBBH    GBBBBBBBBBBBJAD     CAAAAIBBBH                               GBBJD          CAIBBBBBKMMLBBBBBBBBBBJAAAAAAAAAAD                                                                                                     ',
-        '                                                  CAIBBBBBBBBBBBBBBBBBBBH    GBBBBBBBBBBBBBJAAAAAIBBBBBBBBH                               GBBBJD      CAAIBBBBBKME  FMMLBBBBBBBBBBBBBBBBBBJAAD                                                                                                  ',
-        '                     CAAAAAAAAAD               CAAIBBKMMMLBBBBBBBBBBBBBBH    GBBBBBBBBBBBBBBBBBBBBBBBBBBBBH                               GBBBBJAAAAAAIBBBBBBBBH       GBBBBBBBBBBBBBBBBBBBBBJAD                                                                                                ',
-        'AAAAAAAAAAD         CIBBBBBBBBBJAD            CIBBBBBH   FMMLBBBBBBBBBBBH    GBBBBBBBBBKMMMMLBBBBBBBBBBBBBH                               GBBBBBBBBBBBBBBBBBBBBJAD   CAIBBBBBBBBBBBBBBBBBBBBBBBJAAAAAAAAD                                                                                       ',
-        'BBBBBBBBBBJAD    CAAIBBBBBBBBBBBBJAAAAAAAAD  CIBBBKMME      FMMMLBBBBBBBH    GBBBBBBBBBH    FMMLBBBBBBBBBBH                               GBBBBBBBBBBBBBBBBBBBBBBJAAAIBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBH                                                                CAAAAAAAAAAAAAAAAAAAAAA',
-        'BBBBBBBBBBBBJAAAAIBBBBBBBBBBBBBBBBBBBBBBBBH  GBBBBH             GBBBBBBBH    GBBBBBBBBBH       GBBBBBBBBBBH                               GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBH                                                                GBBBBBBBBBBBBBBBBBBBBBB'
-    ]
-}
-
 
 def check_setting(name_setting):
     """
     pass
     """
 
-    with open('setting.json', 'r', encoding='utf8') as file:
+    with open('data/data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
     return data['audio'][name_setting]
+
+
+def transit(pos):
+    transition.new_pos(pos)
 
 
 def check_screen(scren):
@@ -64,48 +24,21 @@ def check_screen(scren):
    pass
    """
 
-    with open('data.json', 'r', encoding='utf8') as file:
+    with open('data/data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
     return data['screen'][scren]
 
 
-def level_change(name) -> None:
+def setting_value(key, name) -> None:
     """
     pass
     """
 
-    with open('data.json', 'r', encoding='utf8') as file:
+    with open('data/data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
 
-    data['gameplay']['level'] = name
+    data['gameplay'][key] = name
 
-    with open('data.json', 'w', encoding='utf8') as file:
-        json.dump(data, file, indent=2)
-
-
-def card_type_entry(type_card) -> None:
-    """
-    pass
-    """
-
-    with open('data.json', 'r', encoding='utf8') as file:
-        data = json.load(file)
-
-    data['gameplay']['type_card'] = type_card
-
-    with open('data.json', 'w', encoding='utf8') as file:
-        json.dump(data, file, indent=2)
-
-
-def card_select(name_card) -> None:
-    """
-    pass
-    """
-
-    with open('data.json', 'r', encoding='utf8') as file:
-        data = json.load(file)
-
-    data['gameplay']['name_card'] = name_card
     with open('data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
 
@@ -115,10 +48,11 @@ def card_selection_easy() -> None:
     pass
     """
 
-    level_change('easy')
+    setting_value('level', 'easy')
 
     card_selection.creating_buttons('Безмятежная долина', 'Прогулка по роще', 'Рассветный путь')
-    screen_change('levels', 'cards')
+    transit('cards')
+    screen_change('levels', 'transition')
 
 
 def card_selection_normal() -> None:
@@ -126,10 +60,11 @@ def card_selection_normal() -> None:
     pass
     """
 
-    level_change('normal')
+    setting_value('level', 'normal')
 
     card_selection.creating_buttons('Перекресток ветров', 'Зеленый лабиринт', 'Скалистый склон')
-    screen_change('levels', 'cards')
+    transit('cards')
+    screen_change('levels', 'transition')
 
 
 def card_selection_hard() -> None:
@@ -137,10 +72,11 @@ def card_selection_hard() -> None:
     pass
     """
 
-    level_change('hard')
+    setting_value('level', 'hard')
 
     card_selection.creating_buttons('Заточенные пики', 'Тень дракона', 'Дыхание вечного')
-    screen_change('levels', 'cards')
+    transit('cards')
+    screen_change('levels', 'transition')
 
 
 def screen_change(screen_one, screen_two) -> None:
@@ -148,14 +84,15 @@ def screen_change(screen_one, screen_two) -> None:
     pass
     """
 
-    with open('data.json', 'r', encoding='utf8') as file:
+    with open('data/data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
 
     data['screen'][screen_one] = False
     data['screen'][screen_two] = True
-    data['screen']['past_position'] = screen_one
+    if screen_one != 'transition':
+        data['screen']['past_position'] = screen_one
 
-    with open('data.json', 'w', encoding='utf8') as file:
+    with open('data/data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
 
 
@@ -164,12 +101,13 @@ def start_screen() -> None:
     pass
     """
 
-    with open('data.json', 'r', encoding='utf8') as file:
+    with open('data/data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
 
     data['screen']['running'] = True
     data['screen']['past_position'] = 'fl_zastavka'
     data['screen']['fl_zastavka'] = True
+    data['screen']['transition'] = False
     data['screen']['fl_menu'] = False
     data['screen']['settings'] = False
     data['screen']['levels'] = False
@@ -181,8 +119,9 @@ def start_screen() -> None:
     data['gameplay']['level'] = ""
     data['gameplay']['name_card'] = ""
     data['gameplay']['type_card'] = ""
+    data['gameplay']['character'] = ""
 
-    with open('data.json', 'w', encoding='utf8') as file:
+    with open('data/data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
 
 
@@ -191,7 +130,7 @@ def music_menu() -> None:
     pass
     """
 
-    pygame.mixer.music.load('file_music\music_menu.mp3')
+    pygame.mixer.music.load('data/file_music/music_menu.mp3')
     pygame.mixer.music.set_volume(check_setting('music_volume'))
     pygame.mixer.music.play(-1)
     if not check_setting('mute_music'):
@@ -205,7 +144,7 @@ def volume_change(value, name) -> None:
     pass
     """
 
-    with open('setting.json', 'r', encoding='utf8') as file:
+    with open('data/data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
     data['audio'][name] = round(value, 2)
 
@@ -214,7 +153,7 @@ def volume_change(value, name) -> None:
     elif name == 'sound_volume':
         sound.set_volume(data['audio']['sound_volume'])
 
-    with open('setting.json', 'w', encoding='utf8') as file:
+    with open('data/data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
 
 
@@ -277,7 +216,7 @@ class Zastavka:
             self.star.append([a * math.cos(angle), a * math.sin(angle)])
 
         # Создание текста, названия игры
-        custom_font = pygame.font.Font('Docker.ttf', 80)
+        custom_font = pygame.font.Font('data/Docker.ttf', 80)
         self.text = custom_font.render('Gravity Flux', True, (0, 0, 0))
         self.text_rect = self.text.get_rect(center=(400, 300))
 
@@ -342,7 +281,7 @@ class Menu:
                               self.close, 30, sound)
 
         # Создание текста
-        font = pygame.font.Font("Docker.ttf", 15)
+        font = pygame.font.Font("data/Docker.ttf", 15)
         self.name_screen = font.render('Gravity Flux', True, (255, 255, 255))
         self.screen_rect = self.name_screen.get_rect(center=(65, 10))
 
@@ -380,14 +319,16 @@ class Menu:
         Метод начала игры
         """
 
-        screen_change('fl_menu', 'levels')
+        transit('levels')
+        screen_change('fl_menu', 'transition')
 
     def open_setting(self) -> None:
         """
         Метод открытия настроек
         """
 
-        screen_change('fl_menu', 'settings')
+        transit('settings')
+        screen_change('fl_menu', 'transition')
 
     def close(self) -> None:
         """
@@ -439,33 +380,47 @@ class Settings:
         zn2 = 'Выключить' if check_setting('mute_sound') else 'Включить'
 
         # Создание кнопок
-        self.button1 = Button([80, 100, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn1,
+        self.button1 = Button([80, 120, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn1,
                               self.onn_off_music, 30, False)
-        self.button2 = Button([80, 300, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn2,
+        self.button2 = Button([80, 320, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn2,
                               self.onn_off_sound, 30, False)
-        self.button3 = Button([300, 500, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Назад',
+        self.button3 = Button([300, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Назад',
                               self.close_seting, 30)
 
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
         # Создание слайдеров
-        self.slider_music = Slider(screen, [400, 190, 300, 20], 0, 1, music_volume, 'music_volume')
-        self.slider_sound = Slider(screen, [400, 390, 300, 20], 0, 1, sound_volume, 'sound_volume')
+        self.slider_music = Slider(screen, [400, 210, 300, 20], 0, 1, music_volume, 'music_volume')
+        self.slider_sound = Slider(screen, [400, 410, 300, 20], 0, 1, sound_volume, 'sound_volume')
 
         # Создание вспомогательного текста
         self.font = pygame.font.Font(None, 28)
         self.text1 = self.font.render('Громкость музыки: ', True, (255, 255, 255))
-        self.text1_rect = self.text1.get_rect(center=(180, 200))
+        self.text1_rect = self.text1.get_rect(center=(180, 220))
         self.text2 = self.font.render('Громкость звуковых эфектов: ', True, (255, 255, 255))
-        self.text2_rect = self.text2.get_rect(center=(200, 400))
+        self.text2_rect = self.text2.get_rect(center=(200, 420))
         self.text5 = self.font.render('Музыка', True, (255, 255, 255))
-        self.text5_rect = self.text1.get_rect(center=(250, 80))
+        self.text5_rect = self.text1.get_rect(center=(250, 100))
         self.text6 = self.font.render('Звуковые эфекты', True, (255, 255, 255))
-        self.text6_rect = self.text2.get_rect(center=(250, 280))
+        self.text6_rect = self.text2.get_rect(center=(250, 300))
+
+        self.text7 = self.font.render('A - движение влево', True, (255, 255, 255))
+        self.text7_rect = self.text2.get_rect(center=(680, 50))
+        self.text8 = self.font.render('D - движение вправо', True, (255, 255, 255))
+        self.text8_rect = self.text2.get_rect(center=(680, 70))
+        self.text9 = self.font.render('W - смена гравитации', True, (255, 255, 255))
+        self.text9_rect = self.text2.get_rect(center=(680, 90))
+        self.text10 = self.font.render('Q - атака', True, (255, 255, 255))
+        self.text10_rect = self.text2.get_rect(center=(680, 110))
+        self.text11 = self.font.render('Space - прыжок', True, (255, 255, 255))
+        self.text11_rect = self.text2.get_rect(center=(680, 130))
+        self.font_2 = pygame.font.Font(None, 30)
+        self.text12 = self.font_2.render('Подсказка:', True, (255, 255, 255))
+        self.text12_rect = self.text2.get_rect(center=(680, 24))
 
         # Создание текста - название окна
-        font = pygame.font.Font("Docker.ttf", 15)
+        font = pygame.font.Font("data/Docker.ttf", 15)
         self.text_surface = font.render('Settings', True, (255, 255, 255))
         self.text_rect = self.text_surface.get_rect(center=(40, 10))
 
@@ -488,7 +443,7 @@ class Settings:
             self.screen.blit(self.text1, self.text1_rect)
             text3 = self.font.render(str(int(round(float(f'{check_setting("music_volume"):.2f}') * 100, 0))), True,
                                      (255, 255, 255))
-            text3_rect = text3.get_rect(center=(330, 200))
+            text3_rect = text3.get_rect(center=(330, 220))
             self.screen.blit(text3, text3_rect)
 
         # Отрисовка слайдера громкости звуковых эффектов, если музыка включена
@@ -497,13 +452,21 @@ class Settings:
             self.screen.blit(self.text2, self.text2_rect)
             text4 = self.font.render(str(int(round(float(f'{check_setting("sound_volume"):.2f}') * 100, 0))), True,
                                      (255, 255, 255))
-            text4_rect = text4.get_rect(center=(370, 400))
+            text4_rect = text4.get_rect(center=(370, 420))
             self.screen.blit(text4, text4_rect)
 
         # Отображение всех текстов
         self.screen.blit(self.text5, self.text5_rect)
         self.screen.blit(self.text6, self.text6_rect)
         self.screen.blit(self.text_surface, self.text_rect)
+
+        if check_screen('play'):
+            self.screen.blit(self.text7, self.text7_rect)
+            self.screen.blit(self.text8, self.text8_rect)
+            self.screen.blit(self.text9, self.text9_rect)
+            self.screen.blit(self.text10, self.text10_rect)
+            self.screen.blit(self.text11, self.text11_rect)
+            self.screen.blit(self.text12, self.text12_rect)
 
     def onn_off_music(self) -> None:
         """
@@ -529,18 +492,18 @@ class Settings:
 
     def onn_off(self, name) -> None:
         """
-        Метод, который присваивает противоположное значение для "name" из файла 'setting.json'
+        Метод, который присваивает противоположное значение для "name" из файла 'data.json'
         """
 
-        # Чтение данных из файла 'setting.json'
-        with open('setting.json', 'r', encoding='utf8') as file:
+        # Чтение данных из файла 'data.json'
+        with open('data/data.json', 'r', encoding='utf8') as file:
             data = json.load(file)
 
         # Изменение полученных данных
         data['audio'][name] = not data['audio'][name]
 
-        # Запись в файл 'setting.json' изменённых данных
-        with open('setting.json', 'w', encoding='utf8') as file:
+        # Запись в файл 'data.json' изменённых данных
+        with open('data/data.json', 'w', encoding='utf8') as file:
             json.dump(data, file, indent=2)
 
     def check_event(self, event) -> None:
@@ -563,14 +526,8 @@ class Settings:
         """
 
         # Определение в каком окне был пользователь, перед тем как зайти в настройки
-        if check_screen('past_position') == 'fl_menu':
-            screen_change('settings', 'fl_menu')
-        elif check_screen('past_position') == 'levels':
-            screen_change('settings', 'levels')
-        elif check_screen('past_position') == 'cards':
-            screen_change('settings', 'cards')
-        elif check_screen('past_position') == 'card_type':
-            screen_change('settings', 'card_type')
+        transit(check_screen('past_position'))
+        screen_change('settings', 'transition')
 
 
 class Levels_Selection:
@@ -583,35 +540,48 @@ class Levels_Selection:
         self.screen = screen
 
         # Создание кнопок
-        self.button1 = Button([100, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), (255, 69, 0), 'Easy',
+        self.button1 = Button([80, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), (255, 69, 0), 'Easy',
                               card_selection_easy, 30)
         self.button2 = Button([300, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), (255, 69, 0), 'Normal',
                               card_selection_normal, 30)
-        self.button3 = Button([500, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), (255, 69, 0), 'Hard',
+        self.button3 = Button([520, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), (255, 69, 0), 'Hard',
                               card_selection_hard, 30)
-        self.button4 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+        self.button4 = Button([520, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
                               self.closing_window, 25)
-        self.button5 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+        self.button5 = Button([80, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
                               self.open_setting, 25)
 
         # Создание текста - название окна
-        font = pygame.font.Font("Docker.ttf", 15)
+        font = pygame.font.Font("data/Docker.ttf", 15)
         self.text_surface = font.render('Levels', True, (255, 255, 255))
-        self.text_rect = self.text_surface.get_rect(center=[32, 10])
+        self.text_rect = self.text_surface.get_rect(center=(33, 10))
+
+        font_2 = pygame.font.Font("data/Docker.ttf", 25)
+        self.text = font_2.render('Выберите уровень сложности', True, (255, 255, 255))
+        self.text_r = self.text.get_rect(center=(400, 60))
+
+        # Загрузка картинок
+        self.image = []
+        for i in range(3):
+            self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_{i}.jpg'), (160, 280)),
+                               [90 + 220 * i, 100]])
 
     def open_setting(self) -> None:
         """
         Метод открытия настроек
         """
 
-        screen_change('levels', 'settings')
+        transit('settings')
+        screen_change('levels', 'transition')
 
     def closing_window(self) -> None:
         """
         Метод закрытия окна выбора ровня сложности
         """
 
-        screen_change('levels', 'fl_menu')
+        setting_value('level', '')
+        transit('fl_menu')
+        screen_change('levels', 'transition')
 
     def draw(self) -> None:
         """
@@ -625,6 +595,9 @@ class Levels_Selection:
         self.button4.draw()
         self.button5.draw()
         self.screen.blit(self.text_surface, self.text_rect)
+        self.screen.blit(self.text, self.text_r)
+        for i in self.image:
+            self.screen.blit(i[0], i[1])
 
     def check_event(self, event) -> None:
         """
@@ -652,22 +625,31 @@ class Card_Selection:
         self.card_1, self.card_2, self.card_3 = None, None, None
 
         # Создание кнопок
-        self.button4 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+        self.button4 = Button([570, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
                               self.closing_window, 25)
-        self.button5 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+        self.button5 = Button([70, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
                               self.open_setting, 25)
 
         # Создание текста - название окна
-        font = pygame.font.Font("Docker.ttf", 15)
+        font = pygame.font.Font("data/Docker.ttf", 15)
         self.text_surface = font.render('Card Selection', True, (255, 255, 255))
-        self.text_rect = self.text_surface.get_rect(center=[73, 10])
+        self.text_rect = self.text_surface.get_rect(center=(73, 10))
+
+        font_2 = pygame.font.Font("data/Docker.ttf", 25)
+        self.text = font_2.render('Выберите карту', True, (255, 255, 255))
+        self.text_r = self.text.get_rect(center=(400, 40))
+
+        # Загрузка картинок
+        self.image = []
+        for i in range(3):
+            pass
 
     def card_one(self) -> None:
         """
         Метод определения, записи названия выбранной карты
         """
 
-        card_select(self.card_1)
+        setting_value('name_card', self.card_1)
         self.open_card_type()
 
     def card_two(self) -> None:
@@ -675,7 +657,7 @@ class Card_Selection:
         Метод определения, записи названия выбранной карты
         """
 
-        card_select(self.card_2)
+        setting_value('name_card', self.card_2)
         self.open_card_type()
 
     def card_three(self) -> None:
@@ -683,7 +665,7 @@ class Card_Selection:
         Метод определения, записи названия выбранной карты
         """
 
-        card_select(self.card_3)
+        setting_value('name_card', self.card_3)
         self.open_card_type()
 
     def open_card_type(self) -> None:
@@ -691,21 +673,25 @@ class Card_Selection:
         Метод открытия окна выбора типа карты
         """
 
-        screen_change('cards', 'card_type')
+        transit('card_type')
+        screen_change('cards', 'transition')
 
     def open_setting(self) -> None:
         """
         Метод открытия настроек
         """
 
-        screen_change('cards', 'settings')
+        transit('settings')
+        screen_change('cards', 'transition')
 
     def closing_window(self) -> None:
         """
         Метод закрытия окна выбора карты
         """
 
-        screen_change('cards', 'levels')
+        setting_value('name_card', '')
+        transit('levels')
+        screen_change('cards', 'transition')
 
     def draw(self) -> None:
         """
@@ -719,6 +705,7 @@ class Card_Selection:
         self.button4.draw()
         self.button5.draw()
         self.screen.blit(self.text_surface, self.text_rect)
+        self.screen.blit(self.text, self.text_r)
 
     def check_event(self, event) -> None:
         """
@@ -759,23 +746,23 @@ class Card_Type:
         self.screen = screen
 
         # Создание кнопок
-        self.button1 = Button([100, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Choco',
+        self.button1 = Button([100, 430, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Choco',
                               self.choice_choco, 25)
-        self.button2 = Button([315, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Grass',
+        self.button2 = Button([315, 430, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Grass',
                               self.choice_grass, 25)
-        self.button3 = Button([530, 400, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Snow',
+        self.button3 = Button([530, 430, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Snow',
                               self.choice_snow, 25)
-        self.button4 = Button([100, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Cake',
+        self.button4 = Button([100, 290, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Cake',
                               self.choice_cake, 25)
-        self.button5 = Button([315, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Dirt',
+        self.button5 = Button([315, 290, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Dirt',
                               self.choice_dirt, 25)
-        self.button6 = Button([530, 260, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Sand',
+        self.button6 = Button([530, 290, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Sand',
                               self.choice_sand, 25)
-        self.button7 = Button([100, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Tundra',
+        self.button7 = Button([100, 150, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Tundra',
                               self.choice_tundra, 25)
-        self.button8 = Button([315, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Castle',
+        self.button8 = Button([315, 150, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Castle',
                               self.choice_castle, 25)
-        self.button9 = Button([530, 120, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Purple',
+        self.button9 = Button([530, 150, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Purple',
                               self.choice_purple, 25)
 
         self.button10 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
@@ -787,19 +774,23 @@ class Card_Type:
         self.images = []
         for i in range(9):
             self.images.append(
-                [pygame.image.load(f'images/{i + 1}_1.png'), [140 + 215 * (i // 3), 40 + 140 * (i % 3)]])
+                [pygame.image.load(f'images/tiles/{i + 1}_1.png'), [140 + 215 * (i // 3), 70 + 140 * (i % 3)]])
 
         # Создание текста - название окна
-        font = pygame.font.Font("Docker.ttf", 15)
-        self.text_surface = font.render('Card Type', True, (255, 255, 255))
-        self.text_rect = self.text_surface.get_rect(center=[52, 10])
+        font_1 = pygame.font.Font("data/Docker.ttf", 15)
+        self.text_surface = font_1.render('Card Type', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=(52, 10))
+
+        font_2 = pygame.font.Font("data/Docker.ttf", 25)
+        self.text = font_2.render('Выберите тип карты', True, (255, 255, 255))
+        self.text_r = self.text.get_rect(center=(400, 40))
 
     def choice_choco(self) -> None:
         """
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('choco')
+        setting_value('type_card', 'choco')
         self.open_character_types()
 
     def choice_grass(self) -> None:
@@ -807,7 +798,7 @@ class Card_Type:
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('grass')
+        setting_value('type_card', 'grass')
         self.open_character_types()
 
     def choice_snow(self) -> None:
@@ -815,7 +806,7 @@ class Card_Type:
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('snow')
+        setting_value('type_card', 'snow')
         self.open_character_types()
 
     def choice_cake(self) -> None:
@@ -823,7 +814,7 @@ class Card_Type:
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('cake')
+        setting_value('type_card', 'cake')
         self.open_character_types()
 
     def choice_dirt(self) -> None:
@@ -831,7 +822,7 @@ class Card_Type:
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('dirt')
+        setting_value('type_card', 'dirt')
         self.open_character_types()
 
     def choice_sand(self) -> None:
@@ -839,7 +830,7 @@ class Card_Type:
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('sand')
+        setting_value('type_card', 'sand')
         self.open_character_types()
 
     def choice_tundra(self) -> None:
@@ -847,7 +838,7 @@ class Card_Type:
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('tundra')
+        setting_value('type_card', 'tundra')
         self.open_character_types()
 
     def choice_castle(self) -> None:
@@ -855,7 +846,7 @@ class Card_Type:
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('castle')
+        setting_value('type_card', 'castle')
         self.open_character_types()
 
     def choice_purple(self) -> None:
@@ -863,7 +854,7 @@ class Card_Type:
         Метод определения и записи выбранный тип карты
         """
 
-        card_type_entry('purple')
+        setting_value('type_card', 'purple')
         self.open_character_types()
 
     def open_character_types(self) -> None:
@@ -871,21 +862,25 @@ class Card_Type:
         Метод открытия окна выбора персонажа
         """
 
-        screen_change('card_type', 'character_types')
+        transit('character_types')
+        screen_change('card_type', 'transition')
 
     def open_setting(self) -> None:
         """
         Метод открытия настроек
         """
 
-        screen_change('card_type', 'settings')
+        transit('settings')
+        screen_change('card_type', 'transition')
 
     def closing_window(self) -> None:
         """
         Метод закрытия окна выбора типа карты
         """
 
-        screen_change('card_type', 'cards')
+        setting_value('type_card', '')
+        transit('cards')
+        screen_change('card_type', 'transition')
 
     def draw(self) -> None:
         """
@@ -905,6 +900,7 @@ class Card_Type:
         self.button10.draw()
         self.button11.draw()
         self.screen.blit(self.text_surface, self.text_rect)
+        self.screen.blit(self.text, self.text_r)
 
         for i in self.images:
             self.screen.blit(i[0], i[1])
@@ -937,18 +933,29 @@ class Character_Types:
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
-        self.button1, self.button2, self.button3 = None, None, None
+        # self.button1, self.button2, self.button3 = None, None, None
 
         # Создание кнопок
+        self.button1 = Button([40, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), 'name1',
+                              self.start, 18)
+        self.button2 = Button([290, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), 'name2',
+                              self.start, 18)
+        self.button3 = Button([540, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), 'name3',
+                              self.start, 18)
         self.button4 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
                               self.closing_window, 25)
         self.button5 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
                               self.open_setting, 25)
 
+        # Создание текста
+        font_1 = pygame.font.Font("data/Docker.ttf", 25)
+        self.text = font_1.render('Выберите персонажа', True, (255, 255, 255))
+        self.text_r = self.text.get_rect(center=(400, 40))
+
         # Создание текста - название окна
-        font = pygame.font.Font("Docker.ttf", 15)
-        self.text_surface = font.render('Card Selection', True, (255, 255, 255))
-        self.text_rect = self.text_surface.get_rect(center=[73, 10])
+        font = pygame.font.Font("data/Docker.ttf", 15)
+        self.text_surface = font.render('Character Types', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=(84, 10))
 
     def start(self) -> None:
         print('start')
@@ -958,14 +965,16 @@ class Character_Types:
         Метод открытия настроек
         """
 
-        screen_change('character_types', 'settings')
+        transit('settings')
+        screen_change('character_types', 'transition')
 
     def closing_window(self) -> None:
         """
         Метод закрытия окна выбора персонажа
         """
 
-        screen_change('character_types', 'card_type')
+        transit('card_type')
+        screen_change('character_types', 'transition')
 
     def draw(self) -> None:
         """
@@ -979,6 +988,7 @@ class Character_Types:
         self.button4.draw()
         self.button5.draw()
         self.screen.blit(self.text_surface, self.text_rect)
+        self.screen.blit(self.text, self.text_r)
 
     def check_event(self, event) -> None:
         """
@@ -996,13 +1006,6 @@ class Character_Types:
         """
         Метод добавления кнопок
         """
-
-        self.button1 = Button([40, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name1,
-                              self.start, 18)
-        self.button2 = Button([290, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name2,
-                              self.start, 18)
-        self.button3 = Button([540, 400, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name3,
-                              self.start, 18)
 
 
 class Button:
@@ -1033,7 +1036,7 @@ class Button:
         self.funk = funk
 
         # Задание шрифта
-        self.font = pygame.font.Font("Docker.ttf", zn)
+        self.font = pygame.font.Font("data/Docker.ttf", zn)
 
         # Реализация текста для кнопки
         self.text = text
@@ -1177,10 +1180,55 @@ class Slider:
                 volume_change(self.value, self.name)
 
 
+class ScreenTransition:
+    """
+    Класс для создания эффекта перехода (затемнения) экрана.
+    """
+
+    def __init__(self, screen) -> None:
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения
+        """
+
+        # Сохранение как экземпляр класса объект окна
+        self.screen = screen
+
+        self.collor = (0, 0, 0)
+
+        self.scren = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+
+        self.alpha = 0
+        self.pos = None
+
+        self.n = 0
+
+    def draw(self) -> None:
+        """
+        Отображает эффект затемнения на экране.
+        """
+
+        self.n += 1
+        if self.n >= 30:
+            self.close()
+
+        self.alpha += 2
+
+        self.scren.fill((*self.collor, self.alpha))
+        self.screen.blit(self.scren, (0, 0))
+
+    def close(self) -> None:
+        screen_change('transition', self.pos)
+
+    def new_pos(self, new_pos) -> None:
+        self.alpha = 0
+        self.n = 0
+        self.pos = new_pos
+
+
 def main():
     global screen, zastavka, main_menu, setting, levels_selection
 
-    pygame.mixer.music.load("file_music\intro.mp3")
+    pygame.mixer.music.load("data/file_music/intro.mp3")
     pygame.mixer.music.set_volume(0.1)
     pygame.mixer.music.play(1)
 
@@ -1201,7 +1249,7 @@ def main():
             elif check_screen('card_type'):
                 card_type.check_event(event)
             elif check_screen('character_types'):
-                card_type.check_event(event)
+                character_types.check_event(event)
 
         if check_screen('fl_zastavka'):
             if pygame.time.get_ticks() - start_time >= 9200:
@@ -1220,6 +1268,8 @@ def main():
             card_type.draw()
         elif check_screen('character_types'):
             character_types.draw()
+        elif check_screen('transition'):
+            transition.draw()
 
         pygame.display.update()
         pygame.display.flip()
@@ -1231,12 +1281,14 @@ if __name__ == '__main__':
     start_screen()
 
     pygame.init()
-    sound = pygame.mixer.Sound("file_music/button_sound.wav")
+    sound = pygame.mixer.Sound("data/file_music/button_sound.wav")
     sound.set_volume(check_setting('sound_volume') if check_setting('mute_sound') else 0)
 
     screen = pygame.display.set_mode((width, height), flags=pygame.NOFRAME)
 
     zastavka = Zastavka(screen)
+
+    transition = ScreenTransition(screen)
 
     main_menu = Menu(screen, sound)
 
