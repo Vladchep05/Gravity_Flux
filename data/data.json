@@ -1,38 +1,65 @@
 {
   "screen": {
     "running": true,
-    "past_position": "fl_zastavka",
-    "fl_zastavka": true,
+    "past_position": "card_type",
+    "fl_zastavka": false,
     "transition": false,
     "fl_menu": false,
     "settings": false,
     "levels": false,
     "cards": false,
     "card_type": false,
-    "character_types": false,
+    "character_types": true,
+    "loading_screen": false,
+    "gemplay": true,
+    "win": false,
+    "loss": false,
     "play": false
   },
   "gameplay": {
-    "level": "",
-    "name_card": "",
-    "type_card": "",
-    "character": ""
+    "level": "normal",
+    "name_card": "\u0412\u0441\u0442\u0440\u0435\u0447\u0430 \u0432\u0435\u0442\u0440\u043e\u0432",
+    "type_card": "dirt",
+    "character": "",
+    "start": ""
   },
   "audio": {
-    "music_volume": 0.3,
-    "sound_volume": 0.3,
+    "music_volume": 0.1,
+    "sound_volume": 0.08,
     "mute_music": true,
     "mute_sound": true
   },
   "type_card_background": {
-    "Choco": "",
-    "Grass": "",
-    "Snow": "",
-    "Cake": "",
-    "Dirt": "",
-    "Sand": "",
-    "Tundra": "",
-    "Castle": "",
-    "Purple": ""
+    "choco": "images/background/choco.png",
+    "grass": "images/background/grass.png",
+    "snow": "images/background/snow.png",
+    "cake": "images/background/cake.png",
+    "dirt": "images/background/dirt.png",
+    "sand": "images/background/sand.png",
+    "tundra": "images/background/tundra.png",
+    "castle": "images/background/castle.png",
+    "purple": "images/background/purple.png"
+  },
+  "open_levels": {
+    "easy": true,
+    "normal": true,
+    "hard": true
+  },
+  "open_cards": {
+    "easy": {
+      "\u0422\u0438\u0445\u0430\u044f \u0434\u043e\u043b\u0438\u043d\u0430": true,
+      "\u041f\u0440\u043e\u0433\u0443\u043b\u043a\u0430 \u043f\u043e \u0440\u043e\u0449\u0435": false,
+      "\u0420\u0430\u0441\u0441\u0432\u0435\u0442\u043d\u044b\u0439 \u043f\u0443\u0442\u044c": false
+    },
+    "normal": {
+      "\u0412\u0441\u0442\u0440\u0435\u0447\u0430 \u0432\u0435\u0442\u0440\u043e\u0432": true,
+      "\u0417\u0435\u043b\u0435\u043d\u044b\u0439 \u043b\u0430\u0431\u0438\u0440\u0438\u043d\u0442": false,
+      "\u0421\u043a\u0430\u043b\u0438\u0441\u0442\u044b\u0439 \u0441\u043a\u043b\u043e\u043d": false
+    },
+    "hard": {
+      "\u0417\u0430\u0442\u043e\u0447\u0435\u043d\u043d\u044b\u0435 \u043f\u0438\u043a\u0438": true,
+      "\u0422\u0435\u043d\u044c \u0434\u0440\u0430\u043a\u043e\u043d\u0430": false,
+      "\u0414\u044b\u0445\u0430\u043d\u0438\u0435 \u0432\u0435\u0447\u043d\u043e\u0433\u043e": false
+    }
   }
 }
