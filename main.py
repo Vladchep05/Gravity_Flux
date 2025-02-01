@@ -1,6 +1,7 @@
 import json
 import math
 import time
+import datetime
 from random import randint, random
 
 import pygame
@@ -52,6 +53,14 @@ def setting_value(key, name) -> None:
 
     with open('data/data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
+
+
+def determination_levels():
+    levels_selection.creating_buttons()
+
+
+def loading():
+    loading_screen.updaute()
 
 
 def card_selection_easy() -> None:
@@ -138,13 +147,14 @@ def start_screen() -> None:
     data['screen']['card_type'] = False
     data['screen']['character_types'] = False
     data['screen']['loading_screen'] = False
-    data['screen']['play'] = False
+    data['screen']['gemplay'] = False
+    data['screen']['win'] = False
+    data['screen']['loss'] = False
 
     data['gameplay']['level'] = ""
     data['gameplay']['name_card'] = ""
     data['gameplay']['type_card'] = ""
     data['gameplay']['character'] = ""
-    data['gameplay']['start'] = ""
 
     with open('data/data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
@@ -212,36 +222,6 @@ def play_sound() -> None:
     sound.play()
 
 
-def load_images(t_s, number_cart):
-    images = {
-        'A': pygame.image.load(f"images/tiles/{number_cart}_1.png").convert_alpha(),
-        'B': pygame.image.load(f"images/tiles/{number_cart}_2.png").convert_alpha(),
-        'C': pygame.image.load(f"images/tiles/{number_cart}_3.png").convert_alpha(),
-        'D': pygame.image.load(f"images/tiles/{number_cart}_4.png").convert_alpha(),
-        'E': pygame.image.load(f"images/tiles/{number_cart}_5.png").convert_alpha(),
-        'F': pygame.image.load(f"images/tiles/{number_cart}_6.png").convert_alpha(),
-        'G': pygame.image.load(f"images/tiles/{number_cart}_7.png").convert_alpha(),
-        'H': pygame.image.load(f"images/tiles/{number_cart}_8.png").convert_alpha(),
-        'I': pygame.image.load(f"images/tiles/{number_cart}_9.png").convert_alpha(),
-        'J': pygame.image.load(f"images/tiles/{number_cart}_10.png").convert_alpha(),
-        'K': pygame.image.load(f"images/tiles/{number_cart}_11.png").convert_alpha(),
-        'L': pygame.image.load(f"images/tiles/{number_cart}_12.png").convert_alpha(),
-        'M': pygame.image.load(f"images/tiles/{number_cart}_13.png").convert_alpha()
-    }
-
-    for key, image in images.items():
-        images[key] = pygame.transform.scale(image, (t_s, t_s))
-
-    return images
-
-
-def start_of_game():
-    """
-    pass
-    """
-    pass
-
-
 class Zastavka:
     """
     Класс, реализующий окно Заставки
@@ -284,7 +264,7 @@ class Zastavka:
         """
 
         # Счётчик для отрисвки
-        self.n = (self.n + 1) % 5
+        self.n = (self.n + 1) % 4
         if self.n == 0:
             # Изменение координат элементов
             for i in range(len(self.coord)):
@@ -318,6 +298,9 @@ class Menu:
         # Координаты положения молний
         self.coord = [[100, 100], [700, 100], [100, 500], [700, 500]]
 
+        # Создание фона
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background_menu.jpg'), (800, 600))
+
         # Список цветов молний
         self.collor = [(255, 0, 0), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
 
@@ -328,11 +311,15 @@ class Menu:
         self.n = 0
 
         # Создание кнопок
-        self.button1 = Button([300, 155, 200, 50], screen, (255, 255, 255), (0, 255, 255), (105, 105, 105), 'Играть',
+        self.button1 = Button([275, 125, 250, 50], screen, (255, 255, 255), (255, 0, 0), (70, 130, 180), 'Играть',
                               self.start_game, 30, "data/Docker.ttf", sound)
-        self.button2 = Button([300, 275, 200, 50], screen, (255, 255, 255), (0, 255, 154), (105, 105, 105), 'Настройки',
+        self.button2 = Button([275, 200, 250, 50], screen, (255, 255, 255), (0, 255, 255), (70, 130, 180), 'Настройки',
                               self.open_setting, 30, "data/Docker.ttf", sound)
-        self.button3 = Button([300, 395, 200, 50], screen, (255, 255, 255), (255, 20, 147), (105, 105, 105), 'Выход',
+        self.button3 = Button([275, 275, 250, 50], screen, (255, 255, 255), (255, 0, 255), (70, 130, 180), 'Результаты',
+                              self.close, 30, "data/Docker.ttf", sound)
+        self.button4 = Button([275, 350, 250, 50], screen, (255, 255, 255), (0, 255, 255), (70, 130, 180), 'Сбросить',
+                              self.open_setting, 30, "data/Docker.ttf", sound)
+        self.button5 = Button([275, 425, 250, 50], screen, (255, 255, 255), (255, 0, 255), (70, 130, 180), 'Выход',
                               self.close, 30, "data/Docker.ttf", sound)
 
         # Создание текста
@@ -345,8 +332,8 @@ class Menu:
         Метод отрисовки окна Главного меню
         """
 
-        # Закрашивание фона в чёрный
-        self.screen.fill((0, 0, 0))
+        # Отрисовка фона
+        self.screen.blit(self.background, (0, 0))
 
         # Счётчик для отрисвки
         self.n = (self.n + 1) % 50
@@ -368,12 +355,15 @@ class Menu:
         self.button1.draw()
         self.button2.draw()
         self.button3.draw()
+        self.button4.draw()
+        self.button5.draw()
 
     def start_game(self) -> None:
         """
         Метод начала игры
         """
 
+        determination_levels()
         transit('levels')
         screen_change('fl_menu', 'transition')
 
@@ -400,14 +390,14 @@ class Menu:
         # Если счётчик равен нулю, то изменяются цвета и координаты молний
         if self.n == 0:
             self.collor = sorted(self.collor, key=lambda x: random())
-            self.coord[0][0] = max(48, min(self.coord[0][0] + randint(-80, 80), 300))
-            self.coord[0][1] = max(0, min(self.coord[0][1] + randint(-80, 80), 188))
-            self.coord[1][0] = max(548, min(self.coord[1][0] + randint(-80, 80), 800))
+            self.coord[0][0] = max(48, min(self.coord[0][0] + randint(-80, 80), 275))
+            self.coord[0][1] = max(15, min(self.coord[0][1] + randint(-80, 80), 188))
+            self.coord[1][0] = max(573, min(self.coord[1][0] + randint(-80, 80), 800))
             self.coord[1][1] = max(0, min(self.coord[1][1] + randint(-80, 80), 188))
-            self.coord[2][0] = max(48, min(self.coord[2][0] + randint(-80, 80), 300))
-            self.coord[2][1] = max(300, min(self.coord[2][1] + randint(-80, 80), 488))
-            self.coord[3][0] = max(548, min(self.coord[3][0] + randint(-80, 80), 800))
-            self.coord[3][1] = max(300, min(self.coord[3][1] + randint(-80, 80), 488))
+            self.coord[2][0] = max(48, min(self.coord[2][0] + randint(-80, 80), 275))
+            self.coord[2][1] = max(275, min(self.coord[2][1] + randint(-80, 80), 488))
+            self.coord[3][0] = max(573, min(self.coord[3][0] + randint(-80, 80), 800))
+            self.coord[3][1] = max(275, min(self.coord[3][1] + randint(-80, 80), 488))
 
     def check_event(self, event) -> None:
         """
@@ -417,6 +407,8 @@ class Menu:
         self.button1.handle_event(event)
         self.button2.handle_event(event)
         self.button3.handle_event(event)
+        self.button4.handle_event(event)
+        self.button5.handle_event(event)
 
 
 class Settings:
@@ -434,6 +426,10 @@ class Settings:
         zn1 = 'Выключить' if check('audio', 'mute_music') else 'Включить'
         zn2 = 'Выключить' if check('audio', 'mute_sound') else 'Включить'
 
+        # Создание фона
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background_setting.jpg'),
+                                                 (800, 600))
+
         # Создание кнопок
         self.button1 = Button([80, 120, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn1,
                               self.onn_off_music, 30, "data/BlackOpsOne-Regular_RUS_by_alince.otf", False)
@@ -441,6 +437,10 @@ class Settings:
                               self.onn_off_sound, 30, "data/BlackOpsOne-Regular_RUS_by_alince.otf", False)
         self.button3 = Button([300, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Назад',
                               self.close_seting, 30)
+        self.button4 = Button([60, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Restart',
+                              self.play_game, 30)
+        self.button5 = Button([540, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Menu',
+                              self.return_menu, 30)
 
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
@@ -461,18 +461,18 @@ class Settings:
         self.text6_rect = self.text2.get_rect(center=(250, 300))
 
         self.text7 = self.font.render('A - движение влево', True, (255, 255, 255))
-        self.text7_rect = self.text2.get_rect(center=(680, 50))
+        self.text7_rect = self.text2.get_rect(center=(720, 50))
         self.text8 = self.font.render('D - движение вправо', True, (255, 255, 255))
-        self.text8_rect = self.text2.get_rect(center=(680, 70))
+        self.text8_rect = self.text2.get_rect(center=(720, 70))
         self.text9 = self.font.render('W - смена гравитации', True, (255, 255, 255))
-        self.text9_rect = self.text2.get_rect(center=(680, 90))
+        self.text9_rect = self.text2.get_rect(center=(720, 90))
         self.text10 = self.font.render('Q - атака', True, (255, 255, 255))
-        self.text10_rect = self.text2.get_rect(center=(680, 110))
+        self.text10_rect = self.text2.get_rect(center=(720, 110))
         self.text11 = self.font.render('Space - прыжок', True, (255, 255, 255))
-        self.text11_rect = self.text2.get_rect(center=(680, 130))
+        self.text11_rect = self.text2.get_rect(center=(720, 130))
         self.font_2 = pygame.font.Font(None, 30)
         self.text12 = self.font_2.render('Подсказка:', True, (255, 255, 255))
-        self.text12_rect = self.text2.get_rect(center=(680, 24))
+        self.text12_rect = self.text2.get_rect(center=(720, 24))
 
         # Создание текста - название окна
         font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
@@ -484,13 +484,17 @@ class Settings:
         Метод отрисовки окна настроек
         """
 
-        # Закрашивание фона в чёрный
-        self.screen.fill((0, 0, 0))
+        # Отрисовка фона
+        self.screen.blit(self.background, (0, 0))
 
         # Отрисовка всех кнопок
         self.button1.draw()
         self.button2.draw()
         self.button3.draw()
+
+        if check('screen', 'past_position') == 'gemplay':
+            self.button4.draw()
+            self.button5.draw()
 
         # Отрисовка слайдера громкости музыки, если музыка включена
         if check('audio', 'mute_music'):
@@ -515,13 +519,24 @@ class Settings:
         self.screen.blit(self.text6, self.text6_rect)
         self.screen.blit(self.text_surface, self.text_rect)
 
-        if check('screen', 'play'):
+        if check('screen', 'past_position') == 'gemplay':
             self.screen.blit(self.text7, self.text7_rect)
             self.screen.blit(self.text8, self.text8_rect)
             self.screen.blit(self.text9, self.text9_rect)
             self.screen.blit(self.text10, self.text10_rect)
             self.screen.blit(self.text11, self.text11_rect)
             self.screen.blit(self.text12, self.text12_rect)
+
+    def return_menu(self):
+        start_screen()
+        screen_change('fl_zastavka', 'fl_menu')
+        transit('fl_menu')
+        screen_change('fl_menu', 'transition')
+
+    def play_game(self):
+        play_game()
+        transit('gemplay')
+        screen_change('settings', 'transition')
 
     def onn_off_music(self) -> None:
         """
@@ -575,6 +590,10 @@ class Settings:
         self.button2.handle_event(event)
         self.button3.handle_event(event)
 
+        if check('screen', 'past_position') == 'gemplay':
+            self.button4.handle_event(event)
+            self.button5.handle_event(event)
+
     def close_seting(self) -> None:
         """
         Метод, который закрывает окно нстроек
@@ -594,36 +613,15 @@ class Levels_Selection:
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
+        # Создание фона
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background_levels.jpg'),
+                                                 (800, 600))
+
         # Загрузка картинок
         self.image = []
 
         # Создание кнопок
-        if check('open_levels', 'easy'):
-            collor = (255, 69, 0)
-        else:
-            collor = (105, 105, 105)
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_0.jpg'), (160, 280)),
-                           [90, 100]])
-        self.button1 = Button([80, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Easy',
-                              card_selection_easy, 30)
-
-        if check('open_levels', 'normal'):
-            collor, ind = (255, 69, 0), 0
-        else:
-            collor, ind = (105, 105, 105), 1
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_1_{ind}.jpg'), (160, 280)),
-                           [90 + 220, 100]])
-        self.button2 = Button([300, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Normal',
-                              card_selection_normal, 30)
-
-        if check('open_levels', 'hard'):
-            collor, ind = (255, 69, 0), 0
-        else:
-            collor, ind = (105, 105, 105), 1
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_2_{ind}.jpg'), (160, 280)),
-                           [90 + 220 * 2, 100]])
-        self.button3 = Button([520, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Hard',
-                              card_selection_hard, 30)
+        self.button1, self.button2, self.button3 = None, None, None
 
         self.button4 = Button([520, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
                               self.closing_window, 25)
@@ -656,12 +654,41 @@ class Levels_Selection:
         transit('fl_menu')
         screen_change('levels', 'transition')
 
+    def creating_buttons(self):
+        # Создание кнопок
+        if check('open_levels', 'easy'):
+            collor = (255, 69, 0)
+        else:
+            collor = (105, 105, 105)
+        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_0.jpg'), (160, 280)),
+                           [90, 100]])
+        self.button1 = Button([80, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Easy',
+                              card_selection_easy, 30)
+
+        if check('open_levels', 'normal'):
+            collor, ind = (255, 69, 0), 0
+        else:
+            collor, ind = (105, 105, 105), 1
+        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_1_{ind}.jpg'), (160, 280)),
+                           [90 + 220, 100]])
+        self.button2 = Button([300, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Normal',
+                              card_selection_normal, 30)
+
+        if check('open_levels', 'hard'):
+            collor, ind = (255, 69, 0), 0
+        else:
+            collor, ind = (105, 105, 105), 1
+        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_2_{ind}.jpg'), (160, 280)),
+                           [90 + 220 * 2, 100]])
+        self.button3 = Button([520, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Hard',
+                              card_selection_hard, 30)
+
     def draw(self) -> None:
         """
         Метод отрисовки окна
         """
 
-        self.screen.fill((0, 0, 0))
+        self.screen.blit(self.background, (0, 0))
         self.button1.draw()
         self.button2.draw()
         self.button3.draw()
@@ -697,6 +724,10 @@ class Card_Selection:
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
+        # Создание фона
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background_cards.jpg'),
+                                                 (800, 600))
+
         self.button1, self.button2, self.button3 = None, None, None
         self.card_1, self.card_2, self.card_3, self.name = None, None, None, None
 
@@ -724,7 +755,6 @@ class Card_Selection:
         """
 
         setting_value('name_card', self.card_1)
-        creating_buttons(['Rt', 'Eloise', 'Eloise'])
         self.open_card_type()
 
     def card_two(self) -> None:
@@ -733,7 +763,6 @@ class Card_Selection:
         """
 
         setting_value('name_card', self.card_2)
-        creating_buttons(['Eloise', 'Eloise', 'Eloise'])
         self.open_card_type()
 
     def card_three(self) -> None:
@@ -742,7 +771,6 @@ class Card_Selection:
         """
 
         setting_value('name_card', self.card_3)
-        creating_buttons(['Eloise', 'Eloise', 'Eloise'])
         self.open_card_type()
 
     def open_card_type(self) -> None:
@@ -750,6 +778,7 @@ class Card_Selection:
         Метод открытия окна выбора типа карты
         """
 
+        creating_buttons(['G', 'D', 'E'])
         transit('card_type')
         screen_change('cards', 'transition')
 
@@ -775,7 +804,7 @@ class Card_Selection:
         Метод отрисовки окна
         """
 
-        self.screen.fill((0, 0, 0))
+        self.screen.blit(self.background, (0, 0))
         self.button1.draw()
         self.button2.draw()
         self.button3.draw()
@@ -854,6 +883,10 @@ class Card_Type:
 
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
+
+        # Создание фона
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background_cards_type.jpg'),
+                                                 (800, 600))
 
         # Создание кнопок
         self.button1 = Button([100, 430, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Choco',
@@ -997,7 +1030,7 @@ class Card_Type:
         Метод отрисовки окна
         """
 
-        self.screen.fill((0, 0, 0))
+        self.screen.blit(self.background, (0, 0))
         self.button1.draw()
         self.button2.draw()
         self.button3.draw()
@@ -1046,13 +1079,18 @@ class Character_Types:
         self.button1, self.button2, self.button3 = None, None, None
         self.name1, self.name2, self.name3 = None, None, None
 
+        # Создание фона
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background_character_types.jpg'),
+                                                 (800, 600))
+
         # Создание кнопок
         self.button4 = Button([570, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
                               self.closing_window, 25)
         self.button5 = Button([70, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
                               self.open_setting, 25)
-        self.button6 = Button([310, 500, 200, 40], screen, (255, 255, 255), (218, 165, 32), (105, 105, 105),
-                              'Начать игру', self.open_setting, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        self.button6 = Button([300, 490, 220, 60], screen, (255, 255, 255), (0, 255, 0), (255, 99, 71), 'Начать игру',
+                              self.play_game, 30, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        self.start = False
 
         # Создание текста
         font_1 = pygame.font.Font("data/Docker.ttf", 25)
@@ -1066,42 +1104,33 @@ class Character_Types:
 
     def player_one(self) -> None:
         setting_value('character', self.name1)
+        self.start = True
         self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), (30, 145, 255), self.name1,
                               self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.button2 = Button([290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name2,
                               self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name3,
                               self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        if not check('gameplay', 'start'):
-            self.button6 = Button([310, 500, 200, 40], screen, (255, 255, 255), (0, 255, 255), (220, 165, 30),
-                                  'Начать игру', self.play_game, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-            setting_value('start', True)
 
     def player_two(self) -> None:
         setting_value('character', self.name2)
+        self.start = True
         self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name1,
                               self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.button2 = Button([290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), (30, 145, 255), self.name2,
                               self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name3,
                               self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        if not check('gameplay', 'start'):
-            self.button6 = Button([310, 500, 200, 40], screen, (255, 255, 255), (0, 255, 255), (220, 165, 30),
-                                  'Начать игру', self.play_game, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-            setting_value('start', True)
 
     def player_three(self) -> None:
         setting_value('character', self.name3)
+        self.start = True
         self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name1,
                               self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.button2 = Button([290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name2,
                               self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), (30, 145, 255), self.name3,
                               self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        if not check('gameplay', 'start'):
-            self.button6 = Button([310, 500, 200, 40], screen, (255, 255, 255), (0, 255, 255), (220, 165, 30),
-                                  'Начать игру', self.play_game, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-            setting_value('start', True)
 
     def open_setting(self) -> None:
         """
@@ -1116,6 +1145,7 @@ class Character_Types:
         Запуск загрузки
         """
 
+        loading()
         transit('loading_screen')
         screen_change('character_types', 'transition')
 
@@ -1124,7 +1154,7 @@ class Character_Types:
         Метод закрытия окна выбора персонажа
         """
 
-        setting_value('start', False)
+        self.start = False
         setting_value('character', '')
         transit('card_type')
         screen_change('character_types', 'transition')
@@ -1135,13 +1165,14 @@ class Character_Types:
         Метод отрисовки окна
         """
 
-        self.screen.fill((0, 0, 0))
+        self.screen.blit(self.background, (0, 0))
         self.button1.draw()
         self.button2.draw()
         self.button3.draw()
         self.button4.draw()
         self.button5.draw()
-        self.button6.draw()
+        if self.start:
+            self.button6.draw()
         self.screen.blit(self.text_surface, self.text_rect)
         self.screen.blit(self.text, self.text_r)
 
@@ -1156,7 +1187,7 @@ class Character_Types:
         self.button3.handle_event(event)
         self.button4.handle_event(event)
         self.button5.handle_event(event)
-        if check('gameplay', 'start'):
+        if self.start:
             self.button6.handle_event(event)
 
     def creating_buttons(self, name1, name2, name3) -> None:
@@ -1177,6 +1208,8 @@ class Character_Types:
         self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name3,
                               self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
 
+        self.start = False
+
     def rollback(self):
         self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name1,
                               self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
@@ -1184,22 +1217,21 @@ class Character_Types:
                               self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name3,
                               self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button6 = Button([310, 500, 200, 40], screen, (255, 255, 255), (218, 165, 32), (105, 105, 105),
-                              'Начать игру', self.play_game, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
 
 
 class LoadingScreen:
     def __init__(self, screen):
         self.screen = screen
-        self.progress = 0.0
-        self.rotation = 0
-        self.message = "Loading..."
-        self.font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 40)
-        self.clock = pygame.time.Clock()
-        self.step = 0
+
+        self.progress = None
+        self.rotation, self.message, self.font, self.clock, self.step = None, None, None, None, None
+
+        # Создание фона
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background_loading.jpg'),
+                                                 (800, 600))
 
     def draw(self):
-        self.screen.fill((0, 0, 0))
+        self.screen.blit(self.background, (0, 0))
 
         text_surface = self.font.render(self.message, True, (255, 215, 0))
         text_rect = text_surface.get_rect(center=(400, 250))
@@ -1209,11 +1241,11 @@ class LoadingScreen:
         angle = math.radians(self.rotation)
         x = int(400 + radius * math.cos(angle))
         y = int(300 + radius * math.sin(angle))
-        pygame.draw.circle(self.screen, (128, 128, 128), (x, y), 10)
+        pygame.draw.circle(self.screen, (210, 105, 30), (x, y), 10)
 
         bar_x = 200
         bar_y = 350
-        pygame.draw.rect(self.screen, (128, 128, 128), (bar_x, bar_y, 400, 22), 2)
+        pygame.draw.rect(self.screen, (100, 100, 100), (bar_x, bar_y, 400, 22), 3)
         fill_width = int(400 * self.progress)
         pygame.draw.rect(self.screen, (255, 215, 0), (bar_x, bar_y, fill_width, 22))
 
@@ -1223,12 +1255,12 @@ class LoadingScreen:
         self.progress = self.step / 20
         self.message = f"Loading... ({int(self.progress * 100)}%)"
 
-        self.rotation += 40
+        self.rotation += randint(20, 50)
         if self.rotation >= 360:
             self.rotation = 0
 
         time.sleep(0.1)
-        self.step += 1
+        self.step += randint(1, 2)
 
         if self.step > 20:
             play_game()
@@ -1236,6 +1268,14 @@ class LoadingScreen:
             screen_change('loading_screen', 'transition')
 
         self.draw()
+
+    def updaute(self):
+        self.progress = 0.0
+        self.rotation = 0
+        self.message = "Loading..."
+        self.font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 40)
+        self.clock = pygame.time.Clock()
+        self.step = 0
 
 
 class Button:
@@ -1456,161 +1496,73 @@ class ScreenTransition:
         self.pos = new_pos
 
 
-class Tile(pygame.sprite.Sprite):
-    def __init__(self, image, x, y):
-        super().__init__()
-        self.image = image
-        self.rect = self.image.get_rect(topleft=(x, y))
-
-
-class Player(pygame.sprite.Sprite):
-    def __init__(self, x, y, image_folder, animation_frames, speed, jump_height, gravity, tile_size):
-        super().__init__()
-
-        self.image_folder = image_folder  # Папка с изображениями анимации
-        self.animation_frames = animation_frames  # Словарь с кадрами анимации
-        self.current_frame = 0
-        self.current_animation = 'mest_right'  # 'idle', 'walk', 'jump'
-        self.frame_delay = 10  # Задержка между кадрами анимации
-        self.frame_timer = 0  # Таймер для анимации
-        self.gravity = gravity
-        self.jump_height = jump_height
-        self.speed = speed
-        self.tile_size = tile_size
-        self.velocity_y = 0
-        self.is_jumping = False
-        self.direction = 'right'
-
-        # Инициализация изображения и rect
-        self.image = self.get_current_image()
-        self.rect = self.image.get_rect(topleft=(x, y))
-
-    def update_animation(self):
-        """Обновляет текущий кадр анимации."""
-        self.frame_timer += 1
-        if self.frame_timer >= self.frame_delay:
-            self.frame_timer = 0
-            self.current_frame += 1
-            if self.current_frame >= len(self.animation_frames[self.current_animation]):
-                self.current_frame = 0
-
-    def get_current_image(self):
-        """Возвращает текущий кадр анимации с учетом направления."""
-        frame = self.animation_frames[self.current_animation][self.current_frame]
-        return frame
-
-    def update(self, tiles):
-        """Обновляет игрока (движение, анимация, столкновения)."""
-        self.update_animation()
-        self.image = self.get_current_image()  # Обновление изображения
-        self.apply_gravity()
-        self.handle_collisions(tiles)
-
-    def move(self, dx, tiles):
-        """Перемещает игрока по оси X."""
-        original_x = self.rect.x
-        self.rect.x += dx
-        if pygame.sprite.spritecollideany(self, tiles):
-            self.rect.x = original_x
-
-        if dx > 0:
-            if self.current_animation != 'jump_right':
-                self.current_animation = 'img_right'
-        elif dx < 0:
-            if self.current_animation != 'jump_left':
-                self.current_animation = 'img_left'
-        elif dx == 0:
-            if self.current_animation != 'jump_right' and self.current_animation != 'jump_left':
-                if self.direction == 'right':
-                    self.current_animation = 'mest_right'
-                else:
-                    self.current_animation = 'mest_left'
-
-    def apply_gravity(self):
-        """Применяет гравитацию к игроку."""
-        self.velocity_y += self.gravity
-
-        self.rect.y += self.velocity_y
-
-    def jump(self):
-        """Прыжок игрока."""
-        if not self.is_jumping:
-            self.is_jumping = True
-            self.velocity_y = -self.jump_height
-            if self.direction == 'right':
-                self.current_animation = 'jump_right'
-            else:
-                self.current_animation = 'jump_left'
-
-    def handle_collisions(self, tiles):
-        """Обрабатывает столкновения с тайлами."""
-        collisions = pygame.sprite.spritecollide(self, tiles, False)
-        if collisions:
-            if self.velocity_y > 0:
-                self.rect.bottom = collisions[0].rect.top
-                self.velocity_y = 0
-                self.is_jumping = False
-        if (self.current_animation == 'jump_right' or self.current_animation == 'img_left') and \
-                self.velocity_y == 0 and not self.is_jumping:
-            if self.direction == 'right':
-                self.current_animation = 'mest_right'
-            else:
-                self.current_animation = 'mest_left'
-        if self.velocity_y == 0 and not self.is_jumping:
-            if self.current_animation == 'jump_right':
-                self.current_animation = 'mest_right'
-            elif self.current_animation == 'jump_left':
-                self.current_animation = 'mest_left'
-
-
-class Eloise(Player):
-    def __init__(self, x, y, tile_size):
-        image_folder = "image_Eloise"
-        animation_frames = {
-            'img_right': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Run_{i}.png'), (40, 80)) for i in
-                          range(9)],
-            'img_left': [
-                pygame.transform.flip(pygame.transform.scale(pygame.image.load(f'image_Eloise/Run_{i}.png'), (40, 80)),
-                                      True, False) for i in range(9)],
-            'mest_right': [pygame.transform.scale(pygame.image.load(f'image_Eloise/mest_{i}.png'), (40, 80)) for i in
-                           range(9)],
-            'mest_left': [
-                pygame.transform.flip(pygame.transform.scale(pygame.image.load(f'image_Eloise/mest_{i}.png'), (40, 80)),
-                                      True, False) for i in range(9)],
-            'jump_right': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Jump_{i}.png'), (40, 85)) for i in
-                           range(9)],
-            'jump_left': [
-                pygame.transform.flip(pygame.transform.scale(pygame.image.load(f'image_Eloise/Jump_{i}.png'), (40, 85)),
-                                      True, False) for i in range(9)]
-        }
-        speed = 5
-        jump_height = 15
-        gravity = 1
-        super().__init__(x, y, image_folder, animation_frames, speed, jump_height, gravity, tile_size)
-
-
 class Gamplay:
     def __init__(self, screen):
         self.screen = screen
-        self.level, self.name_card, self.type_card, self.cards, self.tile_images = None, None, None, None, None
-        self.character, self.type_card_background, self.tiles = None, None, None
+        self.level, self.name_card, self.background_map, self.cards, self.tile_images = None, None, None, None, None
+        self.character, self.type_card_background, self.tiles, self.player, self.numb = None, None, None, None, None
+        self.time, self.dis_time, self.dis_time_rect, self.start_time, self.date_start = None, None, None, None, None
+        self.button_setting = Button([6, 6, 32, 32], screen, (255, 255, 255), (100, 100, 100), (0, 0, 0), 'X',
+                                     self.open_setting, 32, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
 
     def loading(self):
+        self.time = 0
+        self.start_time = f'{datetime.datetime.now().time():%H:%M}'
+        self.date_start = '.'.join(f'{datetime.datetime.now().date()}'.split('-')[::-1])
         self.level = check('gameplay', 'level')
         self.name_card = check('gameplay', 'name_card')
-        self.type_card = check('gameplay', 'type_card')
+        type_card = check('gameplay', 'type_card')
         self.character = check('gameplay', 'character')
-        self.type_card_background = check('type_card_background', self.type_card)
-        self.generate_map()
+        self.type_card_background = check('type_card_background', type_card)
+        self.background_map = pygame.transform.scale(
+            pygame.image.load(check('type_card_background', type_card)).convert_alpha(), (800, 600))
         self.tiles = pygame.sprite.Group()
+        self.generate_map(type_card)
+        self.player = self.Eloise(self.screen, 400, 200, self.tiles, self.numb)
 
     def draw(self):
-        self.screen.fill((0, 0, 0))
-        self.draw_tile()
+        self.time += 1
+        self.draw_map()
+        self.player.update()
 
-    def draw_tile(self):
+    def draw_map(self):
+        x_bac = self.player.cord_bac()
+        self.screen.blit(self.background_map, (x_bac, 0))
+        self.screen.blit(self.background_map, (800 + x_bac, 0))
+        num_one, num_two = self.player.cords_map()
         for tile in self.tiles:
-            tile.draw()
+            tile.draw(num_one, num_two)
+
+        # Обновление текста, время
+        custom_font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 12)
+        if self.time < 216000:
+            zn1, zn2 = str(self.time // 3600), str(self.time % 3600 // 60)
+            time = f'{"0" * (2 - len(zn1)) + zn1}:{"0" * (2 - len(zn2)) + zn2}'
+        else:
+            zn1, zn2, zn3 = str(self.time // 216000), str(self.time % 216000 // 3600), str(
+                self.time % 216000 % 3600 // 60)
+            time = f'{"0" * (2 - len(zn1)) + zn1}:{"0" * (2 - len(zn2)) + zn2}:{"0" * (2 - len(zn3)) + zn3}'
+        self.dis_time = custom_font.render(f'time: {time}', True, (0, 0, 0))
+        self.dis_time_rect = self.dis_time.get_rect(topleft=(2, 586))
+
+        self.screen.blit(self.dis_time, self.dis_time_rect)
+        self.button_setting.draw()
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        # Проверка событий кнопок
+        self.button_setting.handle_event(event)
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        transit('settings')
+        screen_change('gemplay', 'transition')
 
     def load_images(self, t_s, number_cart):
         images = {
@@ -1634,7 +1586,7 @@ class Gamplay:
 
         return images
 
-    def generate_map(self):
+    def generate_map(self, type_card):
         number_cart = {
             "tundra": "1",
             "cake": "2",
@@ -1646,15 +1598,20 @@ class Gamplay:
             "sand": "8",
             "snow": "9"
         }
-        tile_images = self.load_images(32, number_cart[self.type_card])
+        tile_images = self.load_images(32, number_cart[type_card])
         cards = check_levels('levels', self.name_card)
-
+        self.numb = len(cards[0]) * 32
         for y, row in enumerate(cards):
             for x, symbol in enumerate(row):
                 if symbol in tile_images:
                     image = tile_images[symbol]
                     tile = self.Tile(self.screen, image, x * 32, y * 32)
                     self.tiles.add(tile)
+
+        # Создание текста, время
+        custom_font = pygame.font.Font('data/Docker.ttf', 18)
+        self.dis_time = custom_font.render(f'time: 00:00', True, (0, 0, 0))
+        self.dis_time_rect = self.dis_time.get_rect(center=(700, 500))
 
     class Tile(pygame.sprite.Sprite):
         def __init__(self, screen, image, x, y):
@@ -1669,6 +1626,193 @@ class Gamplay:
             tile_pos = (self.rect.x - (pos_player - pos_player_display), self.rect.y)
             if -32 < tile_pos[0] < 800 and -32 < tile_pos[1] < 600:
                 self.screen.blit(self.image, tile_pos)
+
+    class Player(pygame.sprite.Sprite):
+        def __init__(self, screen, x, y, image_folder, animation_frames, speed, jump_height, gravity, tiles, numb):
+            super().__init__()
+
+            self.image_folder = image_folder  # Папка с изображениями анимации
+            self.animation_frames = animation_frames  # Словарь с кадрами анимации
+            self.current_frame = 0
+            self.screen = screen
+            self.frame_delay = 5  # Задержка между кадрами анимации
+            self.frame_timer = 0  # Таймер для анимации
+            self.gravity = gravity
+            self.jump_height = jump_height
+            self.speed = speed
+            self.tiles = tiles
+            self.numb = numb
+            self.x = x
+            self.x_bac = 0
+            self.velocity_y = 0
+            self.attack = False
+            self.change_graviti = True
+            self.smen_grav = True
+            self.is_jumping = False
+            self.run = False
+            self.current_animation = 'mest'
+            self.pressing_space = False
+            self.grav = 1
+            self.direction = 'right'
+
+            # Инициализация изображения и rect
+            self.image = pygame.transform.flip(self.animation_frames['mest'][0], False, False)
+            self.rect = self.image.get_rect(topleft=(x, y))
+
+        def draw(self):
+            self.screen.blit(self.image, (self.x, self.rect.y))
+
+        def get_current_image(self):
+            """Возвращает текущий кадр анимации с учетом направления."""
+
+            old = self.current_animation
+            if not self.attack:
+                if self.change_graviti:
+                    if self.is_jumping:
+                        self.current_animation = 'jump'
+                    else:
+                        if self.run:
+                            self.current_animation = 'run'
+                        else:
+                            self.current_animation = 'mest'
+                else:
+                    self.current_animation = 'smen_graviti'
+            else:
+                self.current_animation = 'attack'
+
+            if old == self.current_animation:
+                self.frame_delay += 1
+                if self.frame_delay > 4:
+                    self.frame_delay = 0
+                    self.current_frame = (self.current_frame + 1) % len(self.animation_frames[self.current_animation])
+            else:
+                self.frame_delay = 0
+                self.current_frame = 0
+
+            if self.direction == 'right':
+                if self.grav == 1:
+                    self.image = pygame.transform.flip(
+                        self.animation_frames[self.current_animation][self.current_frame],
+                        False, False)
+                else:
+                    self.image = pygame.transform.flip(
+                        self.animation_frames[self.current_animation][self.current_frame],
+                        False, True)
+            else:
+                if self.grav == 1:
+                    self.image = pygame.transform.flip(
+                        self.animation_frames[self.current_animation][self.current_frame],
+                        True, False)
+                else:
+                    self.image = pygame.transform.flip(
+                        self.animation_frames[self.current_animation][self.current_frame],
+                        True, True)
+
+        def update(self):
+            self.moving_x()
+            self.moving_y()
+            self.get_current_image()
+            self.draw()
+
+        def game_over(self):
+            transit('loss')
+            screen_change('gemplay', 'transition')
+
+        def win(self):
+            pass
+
+        def moving_x(self):
+            dx = 0
+            keys = pygame.key.get_pressed()
+
+            if keys[pygame.K_SPACE] and not self.is_jumping and not self.pressing_space and self.velocity_y == 0:
+                self.is_jumping, self.pressing_space = True, True
+                self.velocity_y = -self.jump_height * self.grav
+            elif not keys[pygame.K_SPACE] and not self.is_jumping:
+                self.pressing_space = False
+
+            if keys[pygame.K_a] and not keys[pygame.K_d]:
+                dx -= self.speed
+                self.run = True
+                self.direction = 'left'
+            elif keys[pygame.K_d] and not keys[pygame.K_a]:
+                dx += self.speed
+                self.run = True
+                self.direction = 'right'
+            else:
+                self.run = False
+
+            if keys[pygame.K_w] and not self.is_jumping and self.change_graviti:
+                self.is_jumping = True
+                self.change_graviti = False
+                self.grav = -self.grav
+            elif not keys[pygame.K_w] and not self.change_graviti and not self.is_jumping:
+                self.change_graviti = True
+
+            old_x = self.rect.x
+            self.rect.x = max(min(self.rect.x + dx, self.numb), 0)
+            if pygame.sprite.spritecollide(self, self.tiles, False):
+                self.rect.x = old_x
+            else:
+                if self.rect.x <= 200:
+                    self.x = max(min(self.x + dx, 600), 0)
+                elif self.rect.x >= self.numb - 200:
+                    self.x = max(min(self.x + dx, 800), 0)
+                else:
+                    if self.x + dx > 600:
+                        self.x_bac = self.x_bac - 2
+                    elif self.x + dx < 200:
+                        self.x_bac = self.x_bac + 2
+                    if self.x_bac < -800:
+                        self.x_bac = 0
+                    elif self.x_bac > 0:
+                        self.x_bac = -800
+                    self.x = max(min(self.x + dx, 600), 200)
+            print(self.x_bac)
+
+        def moving_y(self):
+            self.velocity_y += self.gravity * self.grav
+            self.rect.y += self.velocity_y
+
+            if collisions := pygame.sprite.spritecollide(self, self.tiles, False):
+                if self.velocity_y > 0:
+                    self.rect.bottom = collisions[0].rect.top
+                    if self.grav == 1:
+                        self.is_jumping = False
+                elif self.velocity_y < 0:
+                    self.rect.top = collisions[0].rect.bottom
+                    if self.grav == -1:
+                        self.is_jumping = False
+
+                self.smen_grav = True
+                self.velocity_y = 0
+
+            if not (0 - 80 * 2 < self.rect.y < 600 + 80):
+                self.game_over()
+
+        def cords_map(self):
+            return self.rect.x, self.x
+
+        def cord_bac(self):
+            return self.x_bac
+
+    class Eloise(Player):
+        def __init__(self, screen, x, y, tiles, numb):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'run': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Run_{i}.png'), (40, 80)) for i in
+                        range(9)],
+                'mest': [pygame.transform.scale(pygame.image.load(f'image_Eloise/mest_{i}.png'), (40, 80)) for i in
+                         range(9)],
+                'jump': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Jump_{i}.png'), (40, 80)) for i in
+                         range(9)],
+                'smen_graviti': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Jump_0.png'), (40, 80))],
+                'attack': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Run_0.png'), (40, 80))]
+            }
+            speed = 4
+            jump_height = 10
+            gravity = 0.5
+            super().__init__(screen, x, y, image_folder, animation_frames, speed, jump_height, gravity, tiles, numb)
 
 
 def main():
@@ -1696,8 +1840,8 @@ def main():
                 card_type.check_event(event)
             elif check('screen', 'character_types'):
                 character_types.check_event(event)
-            # elif check('screen', 'character_types'):
-            # character_types.update(event)
+            elif check('screen', 'gemplay'):
+                game.check_event(event)
 
         if check('screen', 'fl_zastavka'):
             if pygame.time.get_ticks() - start_time >= 9200:
@@ -1720,8 +1864,10 @@ def main():
             loading_screen.update()
         elif check('screen', 'transition'):
             transition.draw()
-        elif check('screen', 'play'):
+        elif check('screen', 'gemplay'):
             game.draw()
+        elif check('screen', 'loss'):
+            print(1)
 
         pygame.display.update()
         pygame.display.flip()
