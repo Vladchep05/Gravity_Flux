@@ -1502,6 +1502,7 @@ class Gamplay:
         self.level, self.name_card, self.background_map, self.cards, self.tile_images = None, None, None, None, None
         self.character, self.type_card_background, self.tiles, self.player, self.numb = None, None, None, None, None
         self.time, self.dis_time, self.dis_time_rect, self.start_time, self.date_start = None, None, None, None, None
+        self.spis_enemy = []
         self.button_setting = Button([6, 6, 32, 32], screen, (255, 255, 255), (100, 100, 100), (0, 0, 0), 'X',
                                      self.open_setting, 32, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
 
@@ -1518,11 +1519,13 @@ class Gamplay:
             pygame.image.load(check('type_card_background', type_card)).convert_alpha(), (800, 600))
         self.tiles = pygame.sprite.Group()
         self.generate_map(type_card)
+        self.creating_enemy()
         self.player = self.Eloise(self.screen, 400, 200, self.tiles, self.numb)
 
     def draw(self):
         self.time += 1
         self.draw_map()
+        self.draw_enemy()
         self.player.update()
 
     def draw_map(self):
@@ -1547,6 +1550,18 @@ class Gamplay:
 
         self.screen.blit(self.dis_time, self.dis_time_rect)
         self.button_setting.draw()
+
+    def creating_enemy(self):
+        self.spis_enemy = []
+        self.spis_enemy.append(self.Enemy(screen, 1120, 270, 2, 3, self.tiles, -1, 12, 50, 132))
+        self.spis_enemy.append(self.Enemy(screen, 1760, 250, 2, 3, self.tiles, -1, 12, 50, 150))
+        self.spis_enemy.append(self.Enemy(screen, 2752, 200, 2, 3, self.tiles, -1, 12, 50, 132))
+        self.spis_enemy.append(self.Enemy(screen, 3328, 384, 2, 3, self.tiles, 1, 12, 80, 200))
+
+    def draw_enemy(self):
+        num_one, num_two = self.player.cords_map()
+        for enemy in self.spis_enemy:
+            enemy.draw(num_one, num_two)
 
     def check_event(self, event) -> None:
         """
@@ -1626,6 +1641,110 @@ class Gamplay:
             tile_pos = (self.rect.x - (pos_player - pos_player_display), self.rect.y)
             if -32 < tile_pos[0] < 800 and -32 < tile_pos[1] < 600:
                 self.screen.blit(self.image, tile_pos)
+
+    class Enemy(pygame.sprite.Sprite):
+        def __init__(self, screen, x, y, speed, health, list_tile, grav, jump, rad, max_rad):
+            super().__init__()
+            self.screen = screen
+            self.x, self.y = x, y
+            self.image = pygame.Surface((30, 30))
+            self.image.fill((0, 0, 0))
+            self.rect = self.image.get_rect(topleft=(x, y))
+            self.speed = speed
+            self.health = health
+            self.list_tile = list_tile
+            self.napr_right = True
+            self.persecution = False
+            self.player_pos = None
+            self.expectation = True
+            self.max_rad = max_rad
+            self.rad = rad
+            self.counter = 0
+            self.is_jump = 1
+            self.grav = grav
+            self.jump = jump
+            self.pos = 0
+            self.v_y = 0
+
+        def draw(self, pos_player, pos_player_display):
+            if self.x - self.max_rad < pos_player < self.x or self.x < pos_player < self.x + self.max_rad:
+                self.player_pos = pos_player
+                if self.expectation:
+                    self.expectation = False
+                self.persecution = True
+            else:
+                self.persecution = False
+                self.player_pos = None
+
+            self.update_x()
+            self.update_y()
+            print(self.rect.x)
+            enemy_pos = (self.rect.x - (pos_player - pos_player_display), self.rect.y)
+            if -30 < enemy_pos[0] < 800:
+                self.screen.blit(self.image, enemy_pos)
+
+        def update_x(self):
+            if self.persecution:
+                if self.player_pos < self.rect.x:
+                    self.change_x(-self.speed)
+                else:
+                    self.change_x(self.speed)
+            elif not self.expectation:
+                if self.rect.x < self.x - self.rad:
+                    self.change_x(self.speed)
+                elif self.rect.x > self.x + self.rad:
+                    self.change_x(-self.speed)
+                else:
+                    self.expectation = True
+            else:
+                if self.napr_right:
+                    if self.rect.x < self.x + self.rad:
+                        self.change_x(self.speed)
+                    elif self.rect.x >= self.x + self.rad:
+                        self.counter += 1
+                        if self.counter == 20:
+                            self.counter = 0
+                            self.napr_right = False
+                else:
+                    if self.rect.x > self.x - self.rad:
+                        self.change_x(-self.speed)
+                    elif self.rect.x <= self.x + self.rad:
+                        self.counter += 1
+                        if self.counter == 20:
+                            self.counter = 0
+                            self.napr_right = True
+
+                # if self.rect.x < self.x + 50:
+                #    self.change_x(self.speed)
+                # elif self.rect.x > self.x + 50:
+                #    self.change_x(-self.speed)
+
+        def change_x(self, speed):
+            old_x = self.rect.x
+            self.rect.x += speed
+            if pygame.sprite.spritecollide(self, self.list_tile, False):
+                self.rect.x = old_x
+                if not self.is_jump:
+                    self.v_y = -self.jump * self.grav
+                    self.is_jump = True
+
+        def update_y(self):
+            self.v_y += self.grav
+            self.rect.y += self.v_y
+            if collisions := pygame.sprite.spritecollide(self, self.list_tile, False):
+                if self.v_y > 0:
+                    self.rect.bottom = collisions[0].rect.top
+                    if self.grav > 0:
+                        self.is_jump = False
+                elif self.v_y < 0:
+                    self.rect.top = collisions[0].rect.bottom
+                    if self.grav < 0:
+                        self.is_jump = False
+
+                self.v_y = 0
+
+            # if not (0 - 80 * 2 < self.rect.y < 600 + 80):
+            #     print(1)
 
     class Player(pygame.sprite.Sprite):
         def __init__(self, screen, x, y, image_folder, animation_frames, speed, jump_height, gravity, tiles, numb):
@@ -1768,7 +1887,6 @@ class Gamplay:
                     elif self.x_bac > 0:
                         self.x_bac = -800
                     self.x = max(min(self.x + dx, 600), 200)
-            print(self.x_bac)
 
         def moving_y(self):
             self.velocity_y += self.gravity * self.grav
