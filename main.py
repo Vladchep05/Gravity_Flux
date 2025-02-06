@@ -1,6 +1,7 @@
 import json
 import math
 import time
+import threading
 import datetime
 from random import randint, random
 
@@ -69,7 +70,7 @@ def card_selection_easy() -> None:
     """
 
     setting_value('level', 'easy')
-
+    character_types.creating_buttons('Блейв', 'Элиза', 'Кассиан')
     card_selection.creating_buttons('Тихая долина', 'Прогулка по роще', 'Рассветный путь')
     transit('cards')
     screen_change('levels', 'transition')
@@ -81,7 +82,7 @@ def card_selection_normal() -> None:
     """
 
     setting_value('level', 'normal')
-
+    character_types.creating_buttons('Рен', 'Келтор', 'Золтан')
     card_selection.creating_buttons('Встреча ветров', 'Зеленый лабиринт', 'Скалистый склон')
     transit('cards')
     screen_change('levels', 'transition')
@@ -93,18 +94,10 @@ def card_selection_hard() -> None:
     """
 
     setting_value('level', 'hard')
-
+    character_types.creating_buttons('Финн', 'Лиам', 'Эйден')
     card_selection.creating_buttons('Заточенные пики', 'Тень дракона', 'Дыхание вечного')
     transit('cards')
     screen_change('levels', 'transition')
-
-
-def creating_buttons(spis) -> None:
-    """
-    pass
-    """
-
-    character_types.creating_buttons(spis[0], spis[1], spis[2])
 
 
 def play_game():
@@ -145,6 +138,7 @@ def start_screen() -> None:
     data['screen']['levels'] = False
     data['screen']['cards'] = False
     data['screen']['card_type'] = False
+    data['screen']['info_player'] = False
     data['screen']['character_types'] = False
     data['screen']['loading_screen'] = False
     data['screen']['gemplay'] = False
@@ -153,7 +147,7 @@ def start_screen() -> None:
 
     data['gameplay']['level'] = ""
     data['gameplay']['name_card'] = ""
-    data['gameplay']['type_card'] = ""
+    data['gameplay']['type_card'] = "tundra"
     data['gameplay']['character'] = ""
 
     with open('data/data.json', 'w', encoding='utf8') as file:
@@ -172,6 +166,14 @@ def music_menu() -> None:
         pygame.mixer.music.pause()
     if not check('audio', 'mute_sound'):
         sound.set_volume(0)
+
+
+def player_inform(name):
+    pl_info.update(name)
+
+
+def res_loss():
+    loss.update()
 
 
 def volume_change(value, name) -> None:
@@ -431,12 +433,18 @@ class Settings:
                                                  (800, 600))
 
         # Создание кнопок
-        self.button1 = Button([80, 120, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn1,
-                              self.onn_off_music, 30, "data/BlackOpsOne-Regular_RUS_by_alince.otf", False)
-        self.button2 = Button([80, 320, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn2,
-                              self.onn_off_sound, 30, "data/BlackOpsOne-Regular_RUS_by_alince.otf", False)
-        self.button3 = Button([300, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Назад',
-                              self.close_seting, 30)
+        self.button1 = Button(
+            [80, 120, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn1, self.onn_off_music, 30,
+            "data/BlackOpsOne-Regular_RUS_by_alince.otf", False
+        )
+        self.button2 = Button(
+            [80, 320, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn2, self.onn_off_sound, 30,
+            "data/BlackOpsOne-Regular_RUS_by_alince.otf", False
+        )
+        self.button3 = Button(
+            [300, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Назад',
+            self.close_seting, 30
+        )
         self.button4 = Button([60, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Restart',
                               self.play_game, 30)
         self.button5 = Button([540, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Menu',
@@ -529,6 +537,7 @@ class Settings:
 
     def return_menu(self):
         start_screen()
+        music_menu()
         screen_change('fl_zastavka', 'fl_menu')
         transit('fl_menu')
         screen_change('fl_menu', 'transition')
@@ -778,7 +787,6 @@ class Card_Selection:
         Метод открытия окна выбора типа карты
         """
 
-        creating_buttons(['G', 'D', 'E'])
         transit('card_type')
         screen_change('cards', 'transition')
 
@@ -1090,7 +1098,18 @@ class Character_Types:
                               self.open_setting, 25)
         self.button6 = Button([300, 490, 220, 60], screen, (255, 255, 255), (0, 255, 0), (255, 99, 71), 'Начать игру',
                               self.play_game, 30, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        self.button7 = Button([200, 410, 80, 22], screen, (255, 255, 255), (250, 21, 133), (150, 0, 0), 'info',
+                              self.open_win_info_pl_one, 15, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        self.button8 = Button([450, 410, 80, 22], screen, (255, 255, 255), (250, 21, 133), (150, 0, 0), 'info',
+                              self.open_win_info_pl_two, 15, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        self.button9 = Button([700, 410, 80, 22], screen, (255, 255, 255), (250, 21, 133), (150, 0, 0), 'info',
+                              self.open_win_info_pl_three, 15, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.start = False
+        self.fl = False
+        self.count = 0
+
+        # Изображения
+        self.pl_image = []
 
         # Создание текста
         font_1 = pygame.font.Font("data/Docker.ttf", 25)
@@ -1102,35 +1121,81 @@ class Character_Types:
         self.text_surface = font.render('Character Types', True, (255, 255, 255))
         self.text_rect = self.text_surface.get_rect(center=(76, 10))
 
+    def chek_open_pl_coll(self, name, fl=False):
+        if check('open_characters', name):
+            if fl:
+                return (30, 145, 255)
+            else:
+                return (75, 0, 130)
+        else:
+            return (105, 105, 105)
+
+    def chek_open_pl_img(self, name):
+        if check('open_characters', name):
+            return 'open'
+        else:
+            return 'close'
+
     def player_one(self) -> None:
+        # Добавление имени выбраннного персонажа
         setting_value('character', self.name1)
         self.start = True
-        self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), (30, 145, 255), self.name1,
-                              self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button2 = Button([290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name2,
-                              self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name3,
-                              self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+
+        self.button1 = Button(
+            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1, True),
+            self.name1,
+            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button2 = Button(
+            [290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), self.chek_open_pl_coll(self.name2),
+            self.name2,
+            self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button3 = Button(
+            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3), self.name3,
+            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.fl = True
 
     def player_two(self) -> None:
+        # Добавление имени выбраннного персонажа
         setting_value('character', self.name2)
         self.start = True
-        self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name1,
-                              self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button2 = Button([290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), (30, 145, 255), self.name2,
-                              self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name3,
-                              self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+
+        self.button1 = Button(
+            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1), self.name1,
+            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button2 = Button(
+            [290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), self.chek_open_pl_coll(self.name2, True),
+            self.name2, self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button3 = Button(
+            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3), self.name3,
+            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.fl = True
 
     def player_three(self) -> None:
+        # Добавление имени выбраннного персонажа
         setting_value('character', self.name3)
         self.start = True
-        self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name1,
-                              self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button2 = Button([290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name2,
-                              self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), (30, 145, 255), self.name3,
-                              self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+
+        self.button1 = Button(
+            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1), self.name1,
+            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button2 = Button(
+            [290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), self.chek_open_pl_coll(self.name2),
+            self.name2,
+            self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button3 = Button(
+            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3, True),
+            self.name3,
+            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.fl = True
 
     def open_setting(self) -> None:
         """
@@ -1145,9 +1210,15 @@ class Character_Types:
         Запуск загрузки
         """
 
+        # time.sleep(0.2)
+
         loading()
         transit('loading_screen')
         screen_change('character_types', 'transition')
+
+        thread = threading.Thread(target=play_game)
+        thread.daemon = True
+        thread.start()
 
     def closing_window(self) -> None:
         """
@@ -1160,10 +1231,29 @@ class Character_Types:
         screen_change('character_types', 'transition')
         self.rollback()
 
+    def open_win_info_pl_one(self):
+        player_inform(self.name1)
+        transit('info_player')
+        screen_change('character_types', 'transition')
+
+    def open_win_info_pl_two(self):
+        player_inform(self.name2)
+        transit('info_player')
+        screen_change('character_types', 'transition')
+
+    def open_win_info_pl_three(self):
+        player_inform(self.name3)
+        transit('info_player')
+        screen_change('character_types', 'transition')
+
     def draw(self) -> None:
         """
         Метод отрисовки окна
         """
+
+        self.count += 1
+        if self.count > 30:
+            self.count, self.fl = 0, True
 
         self.screen.blit(self.background, (0, 0))
         self.button1.draw()
@@ -1171,10 +1261,16 @@ class Character_Types:
         self.button3.draw()
         self.button4.draw()
         self.button5.draw()
-        if self.start:
+        self.button7.draw()
+        self.button8.draw()
+        self.button9.draw()
+        if self.start and self.fl:
             self.button6.draw()
         self.screen.blit(self.text_surface, self.text_rect)
         self.screen.blit(self.text, self.text_r)
+        for i in range(len(self.pl_image)):
+            size = self.pl_image[i].get_size()
+            self.screen.blit(self.pl_image[i], (40 + 250 * i + ((240 - size[0]) // 2), 170))
 
     def check_event(self, event) -> None:
         """
@@ -1182,11 +1278,17 @@ class Character_Types:
         """
 
         # Проверка событий кнопок
-        self.button1.handle_event(event)
-        self.button2.handle_event(event)
-        self.button3.handle_event(event)
+        if check('characteristics', self.name1):
+            self.button1.handle_event(event)
+        if check('characteristics', self.name2):
+            self.button2.handle_event(event)
+        if check('characteristics', self.name3):
+            self.button3.handle_event(event)
         self.button4.handle_event(event)
         self.button5.handle_event(event)
+        self.button7.handle_event(event)
+        self.button8.handle_event(event)
+        self.button9.handle_event(event)
         if self.start:
             self.button6.handle_event(event)
 
@@ -1201,22 +1303,50 @@ class Character_Types:
         self.name3 = name3
 
         # Создание кнопок
-        self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name1,
-                              self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button2 = Button([290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name2,
-                              self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), name3,
-                              self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        self.button1 = Button(
+            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1), self.name1,
+            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button2 = Button(
+            [290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), self.chek_open_pl_coll(self.name2),
+            self.name2,
+            self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button3 = Button(
+            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3), self.name3,
+            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+
+        # Создание изображений персонажей
+        self.pl_image = []
+        self.pl_image.append(
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(name1)}/{name1}.png').convert_alpha()
+        )
+        self.pl_image.append(
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(name2)}/{name2}.png').convert_alpha()
+        )
+        self.pl_image.append(
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(name3)}/{name3}.png').convert_alpha()
+        )
 
         self.start = False
+        self.fl = False
+        self.count = 0
 
     def rollback(self):
-        self.button1 = Button([40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name1,
-                              self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button2 = Button([290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name2,
-                              self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button3 = Button([540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name3,
-                              self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        # Кнопки
+        self.button1 = Button(
+            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name1, self.player_one, 18,
+            "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button2 = Button(
+            [290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name2,
+            self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
+        self.button3 = Button(
+            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name3, self.player_three, 18,
+            "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        )
 
 
 class LoadingScreen:
@@ -1255,15 +1385,15 @@ class LoadingScreen:
         self.progress = self.step / 20
         self.message = f"Loading... ({int(self.progress * 100)}%)"
 
-        self.rotation += randint(20, 50)
+        self.rotation += randint(10, 60)
         if self.rotation >= 360:
             self.rotation = 0
 
         time.sleep(0.1)
         self.step += randint(1, 2)
-
+        # if self.step == 14:
+        #     play_game()
         if self.step > 20:
-            play_game()
             transit('gemplay')
             screen_change('loading_screen', 'transition')
 
@@ -1496,6 +1626,87 @@ class ScreenTransition:
         self.pos = new_pos
 
 
+class Playear_info:
+    def __init__(self, screen):
+        self.screen = screen
+
+        self.button1 = Button([560, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+                              self.closing_window, 25)
+        self.button2 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+                              self.open_setting, 25)
+        self.image, self.name = None, None
+
+    def draw(self):
+        self.screen.fill((0, 0, 0))
+        pygame.draw.rect(self.screen, (105, 105, 105), (100, 80, 400, 400))
+        size = self.image.get_size()
+        self.screen.blit(self.image, (525 + (250 - size[0]) // 2, 105))
+        pygame.draw.rect(self.screen, (255, 0, 0), (525, 80, 250, 250), 5)
+
+        # Создание текста
+        font1 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 27)
+
+        text1 = font1.render(f'Имя персонажа: {self.name}', True, (255, 255, 255))
+        text_r1 = text1.get_rect(center=(300, 120))
+
+        font2 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 24)
+
+        date = check('characteristics', self.name)
+
+        text2 = font2.render(f'Здоровье: {date[0]}', True, pygame.Color('green'))
+        text_r2 = text2.get_rect(center=(300, 200))
+
+        text3 = font2.render(f'Атака: {date[1]}', True, pygame.Color('red'))
+        text_r3 = text3.get_rect(center=(300, 240))
+
+        text4 = font2.render(f'Пыжок: {date[2]}', True, pygame.Color('yellow'))
+        text_r4 = text4.get_rect(center=(300, 280))
+
+        text5 = font2.render(f'Скорость: {date[3]}', True, (0, 255, 255))
+        text_r5 = text5.get_rect(center=(300, 320))
+
+        text6 = font2.render(f'Задержка: {"{:.2f}".format(date[4] / 60)} сек', True, (255, 0, 255))
+        text_r6 = text6.get_rect(center=(300, 360))
+
+        self.screen.blit(text1, text_r1)
+        self.screen.blit(text2, text_r2)
+        self.screen.blit(text3, text_r3)
+        self.screen.blit(text4, text_r4)
+        self.screen.blit(text5, text_r5)
+        self.screen.blit(text6, text_r6)
+
+        self.button1.draw()
+        self.button2.draw()
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        transit('settings')
+        screen_change('info_player', 'transition')
+
+    def closing_window(self) -> None:
+        """
+        Метод закрытия окна выбора типа карты
+        """
+
+        transit('character_types')
+        screen_change('info_player', 'transition')
+
+    def update(self, name):
+        self.name = name
+        self.image = pygame.image.load(f'images/players/open/{name}.png')
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        self.button1.handle_event(event)
+        self.button2.handle_event(event)
+
+
 class Gamplay:
     def __init__(self, screen):
         self.screen = screen
@@ -1520,13 +1731,56 @@ class Gamplay:
         self.tiles = pygame.sprite.Group()
         self.generate_map(type_card)
         self.creating_enemy()
-        self.player = self.Eloise(self.screen, 400, 200, self.tiles, self.numb)
+        sl_player = {
+            'Блейв': self.Blave(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                                self.collision_with_mobs),
+            'Золтан': self.Zoltan(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                                  self.collision_with_mobs),
+            'Кассиан': self.Cassian(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                                    self.collision_with_mobs),
+            'Келтор': self.Keltor(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                                  self.collision_with_mobs),
+            'Лиам': self.Liam(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                              self.collision_with_mobs),
+            'Рен': self.Ren(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                            self.collision_with_mobs),
+            'Финн': self.Finn(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                              self.collision_with_mobs),
+            'Эйден': self.Aiden(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                                self.collision_with_mobs),
+            'Элиза': self.Eliza(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
+                                self.collision_with_mobs)
+        }
+        self.player = sl_player[check('gameplay', 'character')]
 
     def draw(self):
         self.time += 1
         self.draw_map()
         self.draw_enemy()
+        self.draw_stats()
         self.player.update()
+
+    def draw_stats(self):
+        current_value, max_value = self.player.draw_stat()
+        center_x, center_y = 770, 563
+        radius = 18
+        start_angle = -math.pi / 2  # Начинаем с 90 градусов (верх)
+        end_angle = start_angle + (2 * math.pi * ((current_value / max_value) * 100 / 100))
+
+        points = [[center_x, center_y]]  # Начальная точка в центре круга
+        for angle in range(int(math.degrees(start_angle)), int(math.degrees(end_angle)) + 1):
+            rad = math.radians(angle)
+            x = int(center_x + radius * math.cos(rad))
+            y = int(center_y + radius * math.sin(rad))
+            points.append((x, y))
+        if len(points) > 2:
+            pygame.draw.polygon(self.screen, (30, 144, 255, 180), points)
+        pygame.draw.circle(screen, (40, 40, 40), (center_x, center_y), radius + 2, 2)
+
+        font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 12)
+        text = font.render(f'stata', True, (40, 40, 40))
+        text_r = text.get_rect(center=(770, 589))
+        self.screen.blit(text, text_r)
 
     def draw_map(self):
         x_bac = self.player.cord_bac()
@@ -1552,16 +1806,60 @@ class Gamplay:
         self.button_setting.draw()
 
     def creating_enemy(self):
-        self.spis_enemy = []
-        self.spis_enemy.append(self.Enemy(screen, 1120, 270, 2, 3, self.tiles, -1, 12, 50, 132))
-        self.spis_enemy.append(self.Enemy(screen, 1760, 250, 2, 3, self.tiles, -1, 12, 50, 150))
-        self.spis_enemy.append(self.Enemy(screen, 2752, 200, 2, 3, self.tiles, -1, 12, 50, 132))
-        self.spis_enemy.append(self.Enemy(screen, 3328, 384, 2, 3, self.tiles, 1, 12, 80, 200))
+        self.spis_enemy = pygame.sprite.Group()
+        anim = {
+            'run': [
+                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/run/{i}.png'), (78, 78))
+                for i in range(6)
+            ],
+            'idle': [
+                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/idle/{i}.png'), (78, 78))
+                for i in range(7)
+            ],
+            'jump': [
+                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/jump/0.png'), (78, 78))
+            ],
+            'attack': [
+                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/attack/{i}.png'),
+                                       (78, 78) if i != 2 else (100, 78)) for i in range(4)
+            ],
+            'dead': [
+                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/dead/{i}.png'),
+                                       (78, 78) if i != 2 else (100, 78)) for i in range(5)
+            ]
+        }
+        self.spis_enemy.add(
+            self.Enemy(screen, 1120, 270, 2, 3, self.tiles, -1, 12, 50, 132, anim, 5, self.collision_with_player, 60, 1)
+        )
+        self.spis_enemy.add(
+            self.Enemy(screen, 1760, 250, 2, 3, self.tiles, -1, 12, 50, 150, anim, 5, self.collision_with_player, 60, 1)
+        )
+        self.spis_enemy.add(
+            self.Enemy(screen, 2752, 200, 2, 3, self.tiles, -1, 12, 50, 132, anim, 6, self.collision_with_player, 60, 2)
+        )
+        self.spis_enemy.add(
+            self.Enemy(screen, 3328, 384, 2, 3, self.tiles, 1, 12, 80, 200, anim, 8, self.collision_with_player, 60, 1)
+        )
+
+    def collision_with_player(self):
+        pass
+        return 1
+
+    def collision_with_mobs(self):
+        pos_pl = self.player.pos_player()
+        if mob := pygame.sprite.spritecollide(self.player, self.spis_enemy, False):
+            pos_mob = mob[0].pos_mobs()
+
+            if pos_pl[0] > pos_mob[0] and self.player.direct() == 'left' or \
+                    pos_pl[0] < pos_mob[0] and self.player.direct() == 'right':
+                mob[0].taking_damage(self.player.dm())
+                self.player.reg()
 
     def draw_enemy(self):
         num_one, num_two = self.player.cords_map()
+        graviti_player = self.player.grvit()
         for enemy in self.spis_enemy:
-            enemy.draw(num_one, num_two)
+            enemy.draw(num_one, num_two, graviti_player)
 
     def check_event(self, event) -> None:
         """
@@ -1643,7 +1941,8 @@ class Gamplay:
                 self.screen.blit(self.image, tile_pos)
 
     class Enemy(pygame.sprite.Sprite):
-        def __init__(self, screen, x, y, speed, health, list_tile, grav, jump, rad, max_rad):
+        def __init__(self, screen, x, y, speed, health, list_tile, grav, jump, rad, max_rad, animal, hp,
+                     function_reference, delay, damage):
             super().__init__()
             self.screen = screen
             self.x, self.y = x, y
@@ -1651,73 +1950,145 @@ class Gamplay:
             self.image.fill((0, 0, 0))
             self.rect = self.image.get_rect(topleft=(x, y))
             self.speed = speed
+            self.function_reference = function_reference
+            self.animal = animal
             self.health = health
+            self.damage = damage
             self.list_tile = list_tile
             self.napr_right = True
             self.persecution = False
             self.player_pos = None
             self.expectation = True
             self.max_rad = max_rad
+            self.img = 'right'
             self.rad = rad
             self.counter = 0
             self.is_jump = 1
             self.grav = grav
+            self.run = True
+            self.attack = False
+            self.atak = False
+            self.count = 0
+            self.fl_demage = True
+            self.hp = hp
+            self.delay = delay
+            self.sch = 0
+            self.napr = 'right'
+            self.ind = 0
+            self.cause_damage = True
             self.jump = jump
+            self.ind_dead = 0
             self.pos = 0
             self.v_y = 0
 
-        def draw(self, pos_player, pos_player_display):
-            if self.x - self.max_rad < pos_player < self.x or self.x < pos_player < self.x + self.max_rad:
+        def draw(self, pos_player, pos_player_display, grav_pl):
+            if (self.x - self.max_rad <= pos_player <= self.x or self.x <= pos_player <= self.x + self.max_rad) and \
+                    grav_pl == self.grav:
                 self.player_pos = pos_player
-                if self.expectation:
-                    self.expectation = False
                 self.persecution = True
             else:
+                self.expectation = True
                 self.persecution = False
                 self.player_pos = None
 
             self.update_x()
             self.update_y()
-            print(self.rect.x)
+            self.update_image()
             enemy_pos = (self.rect.x - (pos_player - pos_player_display), self.rect.y)
             if -30 < enemy_pos[0] < 800:
                 self.screen.blit(self.image, enemy_pos)
 
-        def update_x(self):
-            if self.persecution:
-                if self.player_pos < self.rect.x:
-                    self.change_x(-self.speed)
+        def update_image(self):
+            self.count += 1
+            if self.count > 8:
+                self.count = 0
+                if self.hp > 0:
+                    if not self.atak:
+                        if self.is_jump:
+                            current_animation = 'jump'
+                        elif self.run:
+                            current_animation = 'run'
+                        else:
+                            current_animation = 'idle'
+                    else:
+                        current_animation = 'atak'
                 else:
-                    self.change_x(self.speed)
-            elif not self.expectation:
-                if self.rect.x < self.x - self.rad:
-                    self.change_x(self.speed)
-                elif self.rect.x > self.x + self.rad:
-                    self.change_x(-self.speed)
-                else:
-                    self.expectation = True
-            else:
-                if self.napr_right:
-                    if self.rect.x < self.x + self.rad:
-                        self.change_x(self.speed)
-                    elif self.rect.x >= self.x + self.rad:
-                        self.counter += 1
-                        if self.counter == 20:
-                            self.counter = 0
-                            self.napr_right = False
-                else:
-                    if self.rect.x > self.x - self.rad:
-                        self.change_x(-self.speed)
-                    elif self.rect.x <= self.x + self.rad:
-                        self.counter += 1
-                        if self.counter == 20:
-                            self.counter = 0
-                            self.napr_right = True
+                    current_animation = 'dead'
+                    if self.ind_dead < len(self.animal['dead']):
+                        self.ind_dead += 1
 
-                # if self.rect.x < self.x + 50:
-                #    self.change_x(self.speed)
-                # elif self.rect.x > self.x + 50:
-                #    self.change_x(-self.speed)
+                if self.ind_dead == len(self.animal['dead']):
+                    self.ind = len(self.animal['dead']) - 1
+                else:
+                    self.ind = (self.ind + 1) % len(self.animal[current_animation])
+
+                if self.img == 'right':
+                    if self.grav == 1:
+                        self.image = pygame.transform.flip(self.animal[current_animation][self.ind], False, False)
+                    else:
+                        self.image = pygame.transform.flip(self.animal[current_animation][self.ind], False, True)
+                else:
+                    if self.grav == 1:
+                        self.image = pygame.transform.flip(self.animal[current_animation][self.ind], True, False)
+                    else:
+                        self.image = pygame.transform.flip(self.animal[current_animation][self.ind], True, True)
+
+        def update_x(self):
+            if not self.attack:
+                self.sch += 1
+                if self.sch > self.delay:
+                    self.sch = 0
+                    self.fl_demage = True
+
+                # if not self.is_jump and self.fl_demage:
+                #     self.count, self.ind = 0, 0
+                #     self.attack, self.fl_demage, self.cause_damage = True, False, True
+
+                if self.persecution:
+                    if not self.run:
+                        self.run = True
+                    if self.player_pos + 40 < self.rect.x:
+                        self.change_x(-self.speed)
+                        self.img = 'left'
+                    elif self.player_pos > self.rect.x:
+                        self.change_x(self.speed)
+                        self.img = 'right'
+                    else:
+                        self.attack = True
+                else:
+                    if not self.expectation:
+                        print(200)
+                        self.expectation = True
+                        if self.img == 'left':
+                            self.img = 'right'
+                        else:
+                            self.img = 'left'
+                        self.run = True
+                    else:
+                        if self.run:
+                            if self.img == 'left':
+                                if self.x - self.rad - self.speed <= self.rect.x <= self.x - self.rad + self.speed:
+                                    self.run = False
+                                elif self.rect.x > self.x - self.rad + self.speed:
+                                    self.img = 'left'
+                            elif self.img == 'right':
+                                if self.x + self.rad - self.speed <= self.rect.x <= self.x + self.rad + self.speed:
+                                    self.run = False
+                                elif self.rect.x < self.x + self.rad - self.speed:
+                                    self.img = 'right'
+
+                            if self.img == 'right':
+                                self.change_x(self.speed)
+                            else:
+                                self.change_x(-self.speed)
+                        else:
+                            self.counter += 1
+                            if self.counter == 20:
+                                self.counter = 0
+                                self.run = True
+            else:
+                if self.cause_damage:
+                    self.function_reference()
 
         def change_x(self, speed):
             old_x = self.rect.x
@@ -1729,32 +2100,45 @@ class Gamplay:
                     self.is_jump = True
 
         def update_y(self):
-            self.v_y += self.grav
-            self.rect.y += self.v_y
-            if collisions := pygame.sprite.spritecollide(self, self.list_tile, False):
-                if self.v_y > 0:
-                    self.rect.bottom = collisions[0].rect.top
-                    if self.grav > 0:
-                        self.is_jump = False
-                elif self.v_y < 0:
-                    self.rect.top = collisions[0].rect.bottom
-                    if self.grav < 0:
-                        self.is_jump = False
+            if not self.attack:
+                self.v_y += self.grav
+                self.rect.y += self.v_y
+                if collisions := pygame.sprite.spritecollide(self, self.list_tile, False):
+                    if self.v_y > 0:
+                        self.rect.bottom = collisions[0].rect.top
+                        if self.grav > 0:
+                            self.is_jump = False
+                    elif self.v_y < 0:
+                        self.rect.top = collisions[0].rect.bottom
+                        if self.grav < 0:
+                            self.is_jump = False
 
-                self.v_y = 0
+                    self.v_y = 0
 
-            # if not (0 - 80 * 2 < self.rect.y < 600 + 80):
-            #     print(1)
+        def taking_damage(self, dm):
+            self.hp -= dm
+
+        def pos_mobs(self):
+            return self.rect
+
+        def reg(self):
+            self.cause_damage = False
+
+        def dm(self):
+            return self.damage
 
     class Player(pygame.sprite.Sprite):
-        def __init__(self, screen, x, y, image_folder, animation_frames, speed, jump_height, gravity, tiles, numb):
+        def __init__(self, screen, x, y, image_folder, animation_frames, speed, jump_height, gravity, tiles,
+                     numb, hp, count, damage, function_reference, delay):
             super().__init__()
 
             self.image_folder = image_folder  # Папка с изображениями анимации
             self.animation_frames = animation_frames  # Словарь с кадрами анимации
             self.current_frame = 0
             self.screen = screen
-            self.frame_delay = 5  # Задержка между кадрами анимации
+            self.function_reference = function_reference
+            self.count = count
+            self.frame_delay = 0  # Задержка между кадрами анимации
             self.frame_timer = 0  # Таймер для анимации
             self.gravity = gravity
             self.jump_height = jump_height
@@ -1762,20 +2146,28 @@ class Gamplay:
             self.tiles = tiles
             self.numb = numb
             self.x = x
+            self.delay = delay
+            self.damage = damage
             self.x_bac = 0
             self.velocity_y = 0
             self.attack = False
             self.change_graviti = True
             self.smen_grav = True
-            self.is_jumping = False
+            self.is_jumping = True
             self.run = False
-            self.current_animation = 'mest'
+            self.current_animation = 'idle'
             self.pressing_space = False
             self.grav = 1
+            self.max_hp = hp
             self.direction = 'right'
+            self.hp = hp
+            self.ind_dead = 0
+            self.cause_damage = True
+            self.fl_demage = True
+            self.sch = 0
 
             # Инициализация изображения и rect
-            self.image = pygame.transform.flip(self.animation_frames['mest'][0], False, False)
+            self.image = pygame.transform.flip(self.animation_frames['idle'][0], False, False)
             self.rect = self.image.get_rect(topleft=(x, y))
 
         def draw(self):
@@ -1785,28 +2177,50 @@ class Gamplay:
             """Возвращает текущий кадр анимации с учетом направления."""
 
             old = self.current_animation
-            if not self.attack:
-                if self.change_graviti:
-                    if self.is_jumping:
-                        self.current_animation = 'jump'
-                    else:
-                        if self.run:
-                            self.current_animation = 'run'
+            if self.hp > 0:
+                if not self.attack:
+                    if self.change_graviti:
+                        if self.is_jumping:
+                            self.current_animation = 'jump'
                         else:
-                            self.current_animation = 'mest'
+                            if self.run:
+                                self.current_animation = 'run'
+                            else:
+                                self.current_animation = 'idle'
+                    else:
+                        self.current_animation = 'smen_graviti'
+                    if old == self.current_animation:
+                        self.frame_delay += 1
+                        if self.frame_delay > self.count:
+                            self.frame_delay = 0
+                            self.current_frame = (self.current_frame + 1) % len(
+                                self.animation_frames[self.current_animation])
+                    else:
+                        self.frame_delay = 0
+                        self.current_frame = 0
                 else:
-                    self.current_animation = 'smen_graviti'
+                    self.current_animation = 'attack'
+                    self.frame_delay += 1
+                    if self.frame_delay > self.count:
+                        self.frame_delay = 0
+                        self.current_frame = self.current_frame + 1
+                        if self.current_frame >= len(self.animation_frames[self.current_animation]):
+                            self.attack = False
+                            self.current_frame = 0
             else:
-                self.current_animation = 'attack'
-
-            if old == self.current_animation:
                 self.frame_delay += 1
-                if self.frame_delay > 4:
+                if self.frame_delay > self.count + 2:
                     self.frame_delay = 0
-                    self.current_frame = (self.current_frame + 1) % len(self.animation_frames[self.current_animation])
-            else:
-                self.frame_delay = 0
-                self.current_frame = 0
+                    self.current_animation = 'dead'
+                    if self.ind_dead < len(self.animation_frames['dead']):
+                        self.ind_dead += 1
+
+                    if self.ind_dead == len(self.animation_frames['dead']):
+                        self.current_frame = len(self.animation_frames[self.current_animation]) - 1
+                        self.game_over()
+                    else:
+                        self.current_frame = (self.current_frame + 1) % len(
+                            self.animation_frames[self.current_animation])
 
             if self.direction == 'right':
                 if self.grav == 1:
@@ -1832,6 +2246,41 @@ class Gamplay:
             self.moving_y()
             self.get_current_image()
             self.draw()
+            self.draw_hp()
+
+        def draw_stat(self):
+            return self.sch, self.delay
+
+        def grvit(self):
+            return self.grav
+
+        def draw_hp(self, segment_count=10):
+            self.hp = max(0, min(self.hp, self.max_hp))
+            segments_filled = int((self.hp / self.max_hp) * segment_count)
+
+            width, height = 250, 20
+            x, y = 275, 575
+
+            for i in range(segment_count):
+                rect = pygame.Rect(x + i * (width // segment_count), y, (width // segment_count), 22)
+
+                if i < segments_filled:
+                    health_percentage = self.hp / self.max_hp
+                    if health_percentage > 0.66:
+                        color = (0, 255, 0)
+                    elif health_percentage > 0.33:
+                        color = (255, 255, 0)
+                    else:
+                        color = (255, 0, 0)
+                    pygame.draw.rect(screen, color, rect)
+                    pygame.draw.rect(screen, (50, 50, 50), rect, 1)
+                else:
+                    pygame.draw.rect(screen, (50, 50, 50), rect, 1)
+
+            font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 12)
+            text = font.render(f'hp', True, (40, 40, 40))
+            text_r = text.get_rect(center=(400, 566))
+            self.screen.blit(text, text_r)
 
         def game_over(self):
             transit('loss')
@@ -1844,69 +2293,91 @@ class Gamplay:
             dx = 0
             keys = pygame.key.get_pressed()
 
-            if keys[pygame.K_SPACE] and not self.is_jumping and not self.pressing_space and self.velocity_y == 0:
-                self.is_jumping, self.pressing_space = True, True
-                self.velocity_y = -self.jump_height * self.grav
-            elif not keys[pygame.K_SPACE] and not self.is_jumping:
-                self.pressing_space = False
-
-            if keys[pygame.K_a] and not keys[pygame.K_d]:
-                dx -= self.speed
-                self.run = True
-                self.direction = 'left'
-            elif keys[pygame.K_d] and not keys[pygame.K_a]:
-                dx += self.speed
-                self.run = True
-                self.direction = 'right'
-            else:
-                self.run = False
-
-            if keys[pygame.K_w] and not self.is_jumping and self.change_graviti:
-                self.is_jumping = True
-                self.change_graviti = False
-                self.grav = -self.grav
-            elif not keys[pygame.K_w] and not self.change_graviti and not self.is_jumping:
-                self.change_graviti = True
-
-            old_x = self.rect.x
-            self.rect.x = max(min(self.rect.x + dx, self.numb), 0)
-            if pygame.sprite.spritecollide(self, self.tiles, False):
-                self.rect.x = old_x
-            else:
-                if self.rect.x <= 200:
-                    self.x = max(min(self.x + dx, 600), 0)
-                elif self.rect.x >= self.numb - 200:
-                    self.x = max(min(self.x + dx, 800), 0)
+            if not self.attack:
+                if self.sch < self.delay:
+                    self.sch += 1
                 else:
-                    if self.x + dx > 600:
-                        self.x_bac = self.x_bac - 2
-                    elif self.x + dx < 200:
-                        self.x_bac = self.x_bac + 2
-                    if self.x_bac < -800:
-                        self.x_bac = 0
-                    elif self.x_bac > 0:
-                        self.x_bac = -800
-                    self.x = max(min(self.x + dx, 600), 200)
+                    if not self.fl_demage:
+                        self.fl_demage = True
+
+                if keys[pygame.K_h]:
+                    self.hp -= 1
+                    print(self.hp)
+
+                left_button, middle_button, right_button = pygame.mouse.get_pressed()
+
+                if left_button and not self.is_jumping and self.smen_grav and self.fl_demage:
+                    self.frame_delay, self.current_frame = 0, 0
+                    self.attack, self.fl_demage, self.cause_damage = True, False, True
+                    self.sch = 0
+
+                if keys[pygame.K_SPACE] and not self.is_jumping and not self.pressing_space and self.velocity_y == 0:
+                    self.is_jumping, self.pressing_space = True, True
+                    self.velocity_y = -self.jump_height * self.grav
+                elif not keys[pygame.K_SPACE] and not self.is_jumping:
+                    self.pressing_space = False
+
+                if keys[pygame.K_a] and not keys[pygame.K_d]:
+                    dx -= self.speed
+                    self.run = True
+                    self.direction = 'left'
+                elif keys[pygame.K_d] and not keys[pygame.K_a]:
+                    dx += self.speed
+                    self.run = True
+                    self.direction = 'right'
+                else:
+                    self.run = False
+
+                if keys[pygame.K_w] and not self.is_jumping and self.change_graviti:
+                    self.is_jumping = True
+                    self.change_graviti = False
+                    self.grav = -self.grav
+                elif not keys[pygame.K_w] and not self.change_graviti and not self.is_jumping:
+                    self.change_graviti = True
+
+                old_x = self.rect.x
+                self.rect.x = max(min(self.rect.x + dx, self.numb), 0)
+                if pygame.sprite.spritecollide(self, self.tiles, False):
+                    self.rect.x = old_x
+                else:
+                    if self.rect.x <= 200:
+                        self.x = max(min(self.x + dx, 600), 0)
+                    elif self.rect.x >= self.numb - 200:
+                        self.x = max(min(self.x + dx, 800), 0)
+                    else:
+                        if self.x + dx > 600:
+                            self.x_bac = self.x_bac - 2
+                        elif self.x + dx < 200:
+                            self.x_bac = self.x_bac + 2
+                        if self.x_bac < -800:
+                            self.x_bac = 0
+                        elif self.x_bac > 0:
+                            self.x_bac = -800
+                        self.x = max(min(self.x + dx, 600), 200)
+            else:
+                if self.cause_damage:
+                    self.function_reference()
 
         def moving_y(self):
-            self.velocity_y += self.gravity * self.grav
-            self.rect.y += self.velocity_y
+            if not self.attack:
+                self.velocity_y += self.gravity * self.grav
+                self.rect.y += self.velocity_y
 
-            if collisions := pygame.sprite.spritecollide(self, self.tiles, False):
-                if self.velocity_y > 0:
-                    self.rect.bottom = collisions[0].rect.top
-                    if self.grav == 1:
-                        self.is_jumping = False
-                elif self.velocity_y < 0:
-                    self.rect.top = collisions[0].rect.bottom
-                    if self.grav == -1:
-                        self.is_jumping = False
+                if collisions := pygame.sprite.spritecollide(self, self.tiles, False):
+                    if self.velocity_y > 0:
+                        self.rect.bottom = collisions[0].rect.top
+                        if self.grav == 1:
+                            self.is_jumping = False
+                    elif self.velocity_y < 0:
+                        self.rect.top = collisions[0].rect.bottom
+                        if self.grav == -1:
+                            self.is_jumping = False
 
-                self.smen_grav = True
-                self.velocity_y = 0
+                    self.smen_grav = True
+                    self.velocity_y = 0
 
-            if not (0 - 80 * 2 < self.rect.y < 600 + 80):
-                self.game_over()
+                if not (0 - 80 * 2 < self.rect.y < 600 + 80):
+                    self.game_over()
 
         def cords_map(self):
             return self.rect.x, self.x
@@ -1914,23 +2385,340 @@ class Gamplay:
         def cord_bac(self):
             return self.x_bac
 
-    class Eloise(Player):
-        def __init__(self, screen, x, y, tiles, numb):
+        def pos_player(self):
+            return self.rect
+
+        def direct(self):
+            return self.direction
+
+        def dm(self):
+            return self.damage
+
+        def reg(self):
+            self.cause_damage = False
+
+    class Blave(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
             image_folder = "image_Eloise"
             animation_frames = {
-                'run': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Run_{i}.png'), (40, 80)) for i in
-                        range(9)],
-                'mest': [pygame.transform.scale(pygame.image.load(f'image_Eloise/mest_{i}.png'), (40, 80)) for i in
-                         range(9)],
-                'jump': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Jump_{i}.png'), (40, 80)) for i in
-                         range(9)],
-                'smen_graviti': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Jump_0.png'), (40, 80))],
-                'attack': [pygame.transform.scale(pygame.image.load(f'image_Eloise/Run_0.png'), (40, 80))]
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/attack/{i}.png'), (98, 90))
+                    for i in range(5)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/dead/{i}.png'), (90, 90))
+                    for i in range(5)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/idle/{i}.png'), (52, 90))
+                    for i in range(5)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/jump/{i}.png'), (82, 90))
+                    for i in range(9)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/run/{i}.png'), (62, 90))
+                    for i in range(8)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/jump/3.png'), (82, 90))
+                ]
             }
-            speed = 4
-            jump_height = 10
             gravity = 0.5
-            super().__init__(screen, x, y, image_folder, animation_frames, speed, jump_height, gravity, tiles, numb)
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height, gravity,
+                             tiles, numb, hp, 6, damage, function_reference, delay)
+
+    class Zoltan(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/attack/{i}.png'), (90, 80))
+                    for i in range(10)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/dead/{i}.png'), (90, 80))
+                    for i in range(10)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/idle/{i}.png'), (90, 80))
+                    for i in range(10)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/jump/{i}.png'), (90, 80))
+                    for i in range(10)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/run/{i}.png'), (90, 80))
+                    for i in range(10)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/jump/3.png'), (90, 80))
+                ]
+            }
+            gravity = 0.5
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
+                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
+
+    class Cassian(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/attack/{i}.png'), (46, 83))
+                    for i in range(10)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/dead/{i}.png'), (46, 83))
+                    for i in range(10)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/idle/{i}.png'), (46, 83))
+                    for i in range(10)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/jump/{i}.png'), (46, 83))
+                    for i in range(10)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/run/{i}.png'), (46, 83))
+                    for i in range(10)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/jump/3.png'), (46, 83))
+                ]
+            }
+            gravity = 0.5
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
+                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
+
+    class Keltor(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/attack/{i}.png'), (60, 108))
+                    for i in range(5)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/dead/{i}.png'), (60, 108))
+                    for i in range(5)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/idle/{i}.png'), (60, 108))
+                    for i in range(9)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/jump/{i}.png'), (80, 108))
+                    for i in range(9)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/run/{i}.png'), (80, 108))
+                    for i in range(8)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/jump/3.png'), (80, 108))
+                ]
+            }
+            gravity = 0.5
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
+                             gravity, tiles, numb, hp, 5, damage, function_reference, delay)
+
+    class Liam(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/attack/{i}.png'), (90, 105))
+                    for i in range(5)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/dead/{i}.png'), (68, 105))
+                    for i in range(6)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/idle/{i}.png'), (68, 105))
+                    for i in range(6)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/jump/{i}.png'), (68, 105))
+                    for i in range(9)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/run/{i}.png'), (68, 105))
+                    for i in range(8)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/jump/4.png'), (68, 105))
+                ]
+            }
+            gravity = 0.5
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
+                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
+
+    class Ren(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/attack/{i}.png'), (100, 85))
+                    for i in range(6)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/dead/{i}.png'), (80, 85))
+                    for i in range(3)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/idle/{i}.png'), (68, 85))
+                    for i in range(6)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/jump/{i}.png'), (80, 85))
+                    for i in range(12)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/run/{i}.png'), (80, 85))
+                    for i in range(8)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/jump/7.png'), (80, 85))
+                ]
+            }
+            gravity = 0.5
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
+                             gravity, tiles, numb, hp, 6, damage, function_reference, delay)
+
+    class Finn(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/attack/{i}.png'), (120, 80))
+                    for i in range(10)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/dead/{i}.png'), (120, 80))
+                    for i in range(10)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/idle/{i}.png'), (120, 80))
+                    for i in range(10)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/jump/{i}.png'), (120, 80))
+                    for i in range(10)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/run/{i}.png'), (120, 80))
+                    for i in range(10)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/jump/2.png'), (120, 80))
+                ]
+            }
+            gravity = 0.5
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
+                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
+
+    class Aiden(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/attack/{i}.png'), (80, 80))
+                    for i in range(10)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/dead/{i}.png'), (80, 80))
+                    for i in range(10)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/idle/{i}.png'), (80, 80))
+                    for i in range(10)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/jump/{i}.png'), (80, 80))
+                    for i in range(10)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/run/{i}.png'), (80, 80))
+                    for i in range(10)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/jump/3.png'), (80, 80))
+                ]
+            }
+            gravity = 0.5
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
+                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
+
+    class Eliza(Player):
+        def __init__(self, screen, cords, tiles, numb, function_reference):
+            image_folder = "image_Eloise"
+            animation_frames = {
+                'attack': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/attack/{i}.png'), (64, 80))
+                    for i in range(10)
+                ],
+                'dead': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/dead/{i}.png'), (40, 80))
+                    for i in range(10)
+                ],
+                'idle': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/idle/{i}.png'), (40, 80))
+                    for i in range(10)
+                ],
+                'jump': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/jump/{i}.png'), (48, 86))
+                    for i in range(10)
+                ],
+                'run': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/run/{i}.png'), (44, 80))
+                    for i in range(10)
+                ],
+                'smen_graviti': [
+                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/jump/3.png'), (44, 80))
+                ]
+            }
+            gravity = 0.5
+            date = check('characteristics', 'Блейв')
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
+                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
+
+
+class Loss:
+    def __init__(self, screen):
+        self.screen = screen
+
+    def update(self):
+        pass
 
 
 def main():
@@ -1958,6 +2746,8 @@ def main():
                 card_type.check_event(event)
             elif check('screen', 'character_types'):
                 character_types.check_event(event)
+            elif check('screen', 'info_player'):
+                pl_info.check_event(event)
             elif check('screen', 'gemplay'):
                 game.check_event(event)
 
@@ -1980,12 +2770,14 @@ def main():
             character_types.draw()
         elif check('screen', 'loading_screen'):
             loading_screen.update()
+        elif check('screen', 'info_player'):
+            pl_info.draw()
         elif check('screen', 'transition'):
             transition.draw()
         elif check('screen', 'gemplay'):
             game.draw()
         elif check('screen', 'loss'):
-            print(1)
+            pass
 
         pygame.display.update()
         pygame.display.flip()
@@ -2018,9 +2810,13 @@ if __name__ == '__main__':
 
     character_types = Character_Types(screen)
 
+    pl_info = Playear_info(screen)
+
     loading_screen = LoadingScreen(screen)
 
     game = Gamplay(screen)
+
+    loss = Loss(screen)
 
     main()
 
