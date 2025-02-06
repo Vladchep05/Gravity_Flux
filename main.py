@@ -216,6 +216,66 @@ def on_off_playback_sound() -> None:
         sound.set_volume(check('audio', 'sound_volume'))
 
 
+def factory_reset():
+    with open('data/data.json', 'r', encoding='utf8') as file:
+        data = json.load(file)
+
+    data['screen']['running'] = True
+    data['screen']['past_position'] = 'fl_zastavka'
+    data['screen']['fl_zastavka'] = True
+    data['screen']['transition'] = False
+    data['screen']['fl_menu'] = False
+    data['screen']['settings'] = False
+    data['screen']['levels'] = False
+    data['screen']['cards'] = False
+    data['screen']['card_type'] = False
+    data['screen']['character_types'] = False
+    data['screen']['info_player'] = False
+    data['screen']['loading_screen'] = False
+    data['screen']['gemplay'] = False
+    data['screen']['win'] = False
+    data['screen']['loss'] = False
+
+    data['gameplay']['level'] = ""
+    data['gameplay']['name_card'] = ""
+    data['gameplay']['type_card'] = ""
+    data['gameplay']['character'] = ""
+
+    data['audio']['music_volume'] = 0.6
+    data['audio']['sound_volume'] = 0.6
+    data['audio']['mute_music'] = True
+    data['audio']['mute_sound'] = True
+
+    data['open_characters']['Блейв'] = True
+    data['open_characters']['Золтан'] = False
+    data['open_characters']['Кассиан'] = False
+    data['open_characters']['Келтор'] = False
+    data['open_characters']['Лиам'] = False
+    data['open_characters']['Рен'] = False
+    data['open_characters']['Финн'] = False
+    data['open_characters']['Элиза'] = False
+    data['open_characters']['Эйден'] = False
+
+    data['open_levels']['easy'] = True
+    data['open_levels']['normal'] = False
+    data['open_levels']['hard'] = False
+
+    data['open_cards']['easy']['Тихая долина'] = True
+    data['open_cards']['easy']['Прогулка по роще'] = False
+    data['open_cards']['easy']['Рассветный путь'] = False
+
+    data['open_cards']['normal']['Встреча ветров'] = True
+    data['open_cards']['normal']['Зеленый лабиринт'] = False
+    data['open_cards']['normal']['Скалистый склон'] = False
+
+    data['open_cards']['hard']['Заточенные пики'] = True
+    data['open_cards']['hard']['Тень дракона'] = False
+    data['open_cards']['hard']['Дыхание вечного'] = False
+
+    with open('data/data.json', 'w', encoding='utf8') as file:
+        json.dump(data, file, indent=2)
+
+
 def play_sound() -> None:
     """
     pass
@@ -320,7 +380,7 @@ class Menu:
         self.button3 = Button([275, 275, 250, 50], screen, (255, 255, 255), (255, 0, 255), (70, 130, 180), 'Результаты',
                               self.close, 30, "data/Docker.ttf", sound)
         self.button4 = Button([275, 350, 250, 50], screen, (255, 255, 255), (0, 255, 255), (70, 130, 180), 'Сбросить',
-                              self.open_setting, 30, "data/Docker.ttf", sound)
+                              factory_reset, 30, "data/Docker.ttf", sound)
         self.button5 = Button([275, 425, 250, 50], screen, (255, 255, 255), (255, 0, 255), (70, 130, 180), 'Выход',
                               self.close, 30, "data/Docker.ttf", sound)
 
@@ -1278,11 +1338,11 @@ class Character_Types:
         """
 
         # Проверка событий кнопок
-        if check('characteristics', self.name1):
+        if check('open_characters', self.name1):
             self.button1.handle_event(event)
-        if check('characteristics', self.name2):
+        if check('open_characters', self.name2):
             self.button2.handle_event(event)
-        if check('characteristics', self.name3):
+        if check('open_characters', self.name3):
             self.button3.handle_event(event)
         self.button4.handle_event(event)
         self.button5.handle_event(event)
@@ -1336,16 +1396,16 @@ class Character_Types:
     def rollback(self):
         # Кнопки
         self.button1 = Button(
-            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name1, self.player_one, 18,
-            "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1), self.name1,
+            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
         )
         self.button2 = Button(
-            [290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name2,
+            [290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name2), self.name2,
             self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
         )
         self.button3 = Button(
-            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), (75, 0, 130), self.name3, self.player_three, 18,
-            "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3), self.name3,
+            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
         )
 
 

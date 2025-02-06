@@ -2,9 +2,9 @@
   "screen": {
     "running": true,
     "past_position": "fl_zastavka",
-    "fl_zastavka": false,
+    "fl_zastavka": true,
     "transition": false,
-    "fl_menu": true,
+    "fl_menu": false,
     "settings": false,
     "levels": false,
     "cards": false,
@@ -14,8 +14,7 @@
     "loading_screen": false,
     "gemplay": false,
     "win": false,
-    "loss": false,
-    "play": false
+    "loss": false
   },
   "gameplay": {
     "level": "",
@@ -65,18 +64,18 @@
     "music_volume": 0.4,
     "sound_volume": 0.08,
     "mute_music": true,
-    "mute_sound": false
+    "mute_sound": true
   },
   "open_characters": {
     "\u0411\u043b\u0435\u0439\u0432": true,
     "\u0417\u043e\u043b\u0442\u0430\u043d": false,
     "\u041a\u0430\u0441\u0441\u0438\u0430\u043d": false,
-    "\u041a\u0435\u043b\u0442\u043e\u0440": false,
-    "\u041b\u0438\u0430\u043c": false,
-    "\u0420\u0435\u043d": false,
-    "\u0424\u0438\u043d\u043d": false,
-    "\u042d\u043b\u0438\u0437\u0430": false,
-    "\u042d\u0439\u0434\u0435\u043d": false
+    "\u041a\u0435\u043b\u0442\u043e\u0440": true,
+    "\u041b\u0438\u0430\u043c": true,
+    "\u0420\u0435\u043d": true,
+    "\u0424\u0438\u043d\u043d": true,
+    "\u042d\u043b\u0438\u0437\u0430": true,
+    "\u042d\u0439\u0434\u0435\u043d": true
   },
   "characteristics": {
     "\u0411\u043b\u0435\u0439\u0432": [
