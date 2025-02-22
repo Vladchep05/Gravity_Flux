@@ -3,7 +3,13 @@ import math
 import time
 import threading
 import datetime
-from random import randint, random
+from random import randint, random, uniform, sample
+
+from scr.constants import (rating_cost, belonging_to_level, portal_cords, spawn_coordinates, type_card_background,
+                           catering_coefficients_levels, catering_coefficients_cards, opening_levels, range_rating,
+                           map_index, level_map, rating_character, list_name_card, spavn_mobs, list_tiles,
+                           animation_frames_character, animations_mob, coin_animation, maximum_improvement,
+                           character_level, level_improvement, x_offset)
 
 import pygame
 
@@ -60,8 +66,24 @@ def determination_levels():
     levels_selection.creating_buttons()
 
 
-def loading():
-    loading_screen.updaute()
+def loading(fl=False):
+    loading_screen.updaute(fl)
+
+
+def time_check(name_card, time):
+    with open('data/better_time.txt', 'r', encoding='utf8') as file:
+        data = file.read().split('\n')
+
+    ind = map_index[name_card]
+    if (old_time := data[ind + 1]) != '-':
+        if int(old_time) > time:
+            data[ind + 1] = str(time)
+            with open('data/better_time.txt', 'w', encoding='utf8') as file:
+                file.writelines([i + '\n' for i in data[:-1]] + [data[-1]])
+    else:
+        data[ind + 1] = str(time)
+        with open('data/better_time.txt', 'w', encoding='utf8') as file:
+            file.writelines([i + '\n' for i in data[:-1]] + [data[-1]])
 
 
 def card_selection_easy() -> None:
@@ -71,7 +93,7 @@ def card_selection_easy() -> None:
 
     setting_value('level', 'easy')
     character_types.creating_buttons('Блейв', 'Элиза', 'Кассиан')
-    card_selection.creating_buttons('Тихая долина', 'Прогулка по роще', 'Рассветный путь')
+    card_selection.creating_buttons(*level_map['easy'])
     transit('cards')
     screen_change('levels', 'transition')
 
@@ -83,7 +105,7 @@ def card_selection_normal() -> None:
 
     setting_value('level', 'normal')
     character_types.creating_buttons('Рен', 'Келтор', 'Золтан')
-    card_selection.creating_buttons('Встреча ветров', 'Зеленый лабиринт', 'Скалистый склон')
+    card_selection.creating_buttons(*level_map['normal'])
     transit('cards')
     screen_change('levels', 'transition')
 
@@ -95,7 +117,7 @@ def card_selection_hard() -> None:
 
     setting_value('level', 'hard')
     character_types.creating_buttons('Финн', 'Лиам', 'Эйден')
-    card_selection.creating_buttons('Заточенные пики', 'Тень дракона', 'Дыхание вечного')
+    card_selection.creating_buttons(*level_map['hard'])
     transit('cards')
     screen_change('levels', 'transition')
 
@@ -129,26 +151,65 @@ def start_screen() -> None:
     with open('data/data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
 
-    data['screen']['running'] = True
+    data['screen']['improvement_character'] = False
     data['screen']['past_position'] = 'fl_zastavka'
-    data['screen']['fl_zastavka'] = True
-    data['screen']['transition'] = False
-    data['screen']['fl_menu'] = False
-    data['screen']['settings'] = False
-    data['screen']['levels'] = False
-    data['screen']['cards'] = False
-    data['screen']['card_type'] = False
-    data['screen']['info_player'] = False
+    data['screen']['reset_confirmation'] = False
     data['screen']['character_types'] = False
     data['screen']['loading_screen'] = False
+    data['screen']['info_player'] = False
+    data['screen']['transition'] = False
+    data['screen']['fl_zastavka'] = True
+    data['screen']['card_type'] = False
+    data['screen']['settings'] = False
     data['screen']['gemplay'] = False
-    data['screen']['win'] = False
+    data['screen']['fl_menu'] = False
+    data['screen']['results'] = False
+    data['screen']['running'] = True
+    data['screen']['levels'] = False
+    data['screen']['cards'] = False
     data['screen']['loss'] = False
+    data['screen']['win'] = False
 
-    data['gameplay']['level'] = ""
-    data['gameplay']['name_card'] = ""
     data['gameplay']['type_card'] = "tundra"
+    data['gameplay']['name_card'] = ""
     data['gameplay']['character'] = ""
+    data['gameplay']['level'] = ""
+
+    with open('data/data.json', 'w', encoding='utf8') as file:
+        json.dump(data, file, indent=2)
+
+
+def recording_data(rating, coins, name_card, res):
+    with open('data/data.json', 'r', encoding='utf8') as file:
+        data = json.load(file)
+
+    data['gameplay']['rating'] += rating
+    if res == 'win':
+        data['gameplay']['coins'] += coins
+
+    for name, rat in rating_cost.items():
+        if data['gameplay']['rating'] >= rat:
+            data['open_cards'][belonging_to_level[name]][name] = True
+        else:
+            data['open_cards'][belonging_to_level[name]][name] = False
+
+    if res == 'win' and name_card in ['Рассветный путь', 'Скалистый склон'] and \
+            not data['open_levels'][(level := opening_levels[belonging_to_level[name_card]])]:
+        data['open_levels'][level] = True
+
+    with open('data/better_time.txt', 'r', encoding='utf8') as file:
+        dat = file.read().split('\n')
+        max_rat, dat1 = int(dat[0]), dat[1:]
+
+    if data['gameplay']['rating'] > max_rat:
+        with open('data/better_time.txt', 'w', encoding='utf8') as file:
+            file.writelines([i + '\n' for i in [str(data['gameplay']['rating'])] + dat1[:-1]] + [dat[-1]])
+
+    for name, rat in rating_character.items():
+        if data['gameplay']['rating'] >= rat:
+            data['open_characters'][name] = True
+        else:
+            data['open_characters'][name] = False
 
     with open('data/data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
@@ -172,8 +233,25 @@ def player_inform(name):
     pl_info.update(name)
 
 
+def update_improvement(name):
+    improvement_character.update_button(name)
+
+
+def collecting_coins(coin_pos, kill):
+    pl_pos = game.player.rect
+    if pl_pos.colliderect(coin_pos):
+        game.update_coin()
+        kill()
+
+
 def res_loss():
-    loss.update()
+    mobs, time, coin, level, card = game.inf()
+    res.update(mobs, time, coin, 'loss', level, card)
+
+
+def res_win():
+    mobs, time, coin, level, card = game.inf()
+    res.update(mobs, time, coin, 'win', level, card)
 
 
 def volume_change(value, name) -> None:
@@ -216,13 +294,53 @@ def on_off_playback_sound() -> None:
         sound.set_volume(check('audio', 'sound_volume'))
 
 
+def menu_update_but():
+    main_menu.update_buttom()
+
+
+def setting_update_but():
+    setting.update_button()
+
+
+def levels_update_but():
+    levels_selection.creating_buttons()
+
+
+def card_sel_update_but():
+    card_selection.creating_buttons(*level_map[check('gameplay', 'level')])
+
+
+def card_type_update_but():
+    card_type.update_button()
+
+
+def character_update_but():
+    character_types.rollback()
+
+
+def pl_info_update_but():
+    pl_info.update_button()
+
+
+def game_update_but():
+    game.update_button()
+
+
+def results_update_but():
+    results.update_button()
+
+
 def factory_reset():
+    transit('loading_screen')
+    screen_change('reset_confirmation', 'transition')
+    loading()
+
     with open('data/data.json', 'r', encoding='utf8') as file:
         data = json.load(file)
 
     data['screen']['running'] = True
-    data['screen']['past_position'] = 'fl_zastavka'
-    data['screen']['fl_zastavka'] = True
+    data['screen']['past_position'] = 'fl_menu'
+    data['screen']['fl_zastavka'] = False
     data['screen']['transition'] = False
     data['screen']['fl_menu'] = False
     data['screen']['settings'] = False
@@ -231,7 +349,7 @@ def factory_reset():
     data['screen']['card_type'] = False
     data['screen']['character_types'] = False
     data['screen']['info_player'] = False
-    data['screen']['loading_screen'] = False
+    data['screen']['loading_screen'] = True
     data['screen']['gemplay'] = False
     data['screen']['win'] = False
     data['screen']['loss'] = False
@@ -240,6 +358,8 @@ def factory_reset():
     data['gameplay']['name_card'] = ""
     data['gameplay']['type_card'] = ""
     data['gameplay']['character'] = ""
+    data['gameplay']['rating'] = 0
+    data['gameplay']['coins'] = 0
 
     data['audio']['music_volume'] = 0.6
     data['audio']['sound_volume'] = 0.6
@@ -264,16 +384,23 @@ def factory_reset():
     data['open_cards']['easy']['Прогулка по роще'] = False
     data['open_cards']['easy']['Рассветный путь'] = False
 
-    data['open_cards']['normal']['Встреча ветров'] = True
+    data['open_cards']['normal']['Встреча ветров'] = False
     data['open_cards']['normal']['Зеленый лабиринт'] = False
     data['open_cards']['normal']['Скалистый склон'] = False
 
-    data['open_cards']['hard']['Заточенные пики'] = True
+    data['open_cards']['hard']['Заточенные пики'] = False
     data['open_cards']['hard']['Тень дракона'] = False
     data['open_cards']['hard']['Дыхание вечного'] = False
 
     with open('data/data.json', 'w', encoding='utf8') as file:
         json.dump(data, file, indent=2)
+
+    with open('data/better_time.txt', 'r', encoding='utf8') as file:
+        data = file.read().split('\n')
+        max_rat = [data[0] + '\n']
+
+    with open('data/better_time.txt', 'w', encoding='utf8') as file:
+        file.writelines(max_rat + ['-\n' * 8] + ['-'])
 
 
 def play_sound() -> None:
@@ -326,7 +453,7 @@ class Zastavka:
         """
 
         # Счётчик для отрисвки
-        self.n = (self.n + 1) % 4
+        self.n = (self.n + 1) % 3
         if self.n == 0:
             # Изменение координат элементов
             for i in range(len(self.coord)):
@@ -361,7 +488,7 @@ class Menu:
         self.coord = [[100, 100], [700, 100], [100, 500], [700, 500]]
 
         # Создание фона
-        self.background = pygame.transform.scale(pygame.image.load('images/background/background_menu.jpg'), (800, 600))
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background.png'), (800, 600))
 
         # Список цветов молний
         self.collor = [(255, 0, 0), (255, 255, 0), (0, 255, 255), (255, 0, 255)]
@@ -369,20 +496,12 @@ class Menu:
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
+        self.buttons = []
+
+        self.update_buttom()
+
         # Создание счётчика
         self.n = 0
-
-        # Создание кнопок
-        self.button1 = Button([275, 125, 250, 50], screen, (255, 255, 255), (255, 0, 0), (70, 130, 180), 'Играть',
-                              self.start_game, 30, "data/Docker.ttf", sound)
-        self.button2 = Button([275, 200, 250, 50], screen, (255, 255, 255), (0, 255, 255), (70, 130, 180), 'Настройки',
-                              self.open_setting, 30, "data/Docker.ttf", sound)
-        self.button3 = Button([275, 275, 250, 50], screen, (255, 255, 255), (255, 0, 255), (70, 130, 180), 'Результаты',
-                              self.close, 30, "data/Docker.ttf", sound)
-        self.button4 = Button([275, 350, 250, 50], screen, (255, 255, 255), (0, 255, 255), (70, 130, 180), 'Сбросить',
-                              factory_reset, 30, "data/Docker.ttf", sound)
-        self.button5 = Button([275, 425, 250, 50], screen, (255, 255, 255), (255, 0, 255), (70, 130, 180), 'Выход',
-                              self.close, 30, "data/Docker.ttf", sound)
 
         # Создание текста
         font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
@@ -414,11 +533,54 @@ class Menu:
         self.screen.blit(self.name_screen, self.screen_rect)
 
         # Отрисовка всех кнопок
-        self.button1.draw()
-        self.button2.draw()
-        self.button3.draw()
-        self.button4.draw()
-        self.button5.draw()
+        for button in self.buttons:
+            button.draw()
+
+    def update_buttom(self) -> None:
+        # Обновление кнопок
+        self.buttons = []
+
+        self.buttons.append(
+            ImageButton(
+                [260, 125, 280, 60], screen, "images/buttons/main_menu/play_0.png",
+                "images/buttons/main_menu/play_1.png", self.start_game, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [260, 200, 280, 60], screen, "images/buttons/other/settings_0.png",
+                "images/buttons/other/settings_1.png", self.open_setting, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [260, 275, 280, 60], screen, "images/buttons/main_menu/result_0.png",
+                "images/buttons/main_menu/result_1.png", self.open_results, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [260, 350, 280, 60], screen, "images/buttons/main_menu/reset_0.png",
+                "images/buttons/main_menu/reset_1.png", self.open_reset_confirmation, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [260, 425, 280, 60], screen, "images/buttons/main_menu/exit_0.png",
+                "images/buttons/main_menu/exit_1.png",
+                self.close, scale=1.0, hover_scale=1.1
+            )
+        )
+
+    def open_results(self):
+        transit('results')
+        screen_change('fl_menu', 'transition')
+        results_update_but()
+
+    def open_reset_confirmation(self):
+        transit('reset_confirmation')
+        screen_change('fl_menu', 'transition')
+        self.update_buttom()
 
     def start_game(self) -> None:
         """
@@ -428,6 +590,7 @@ class Menu:
         determination_levels()
         transit('levels')
         screen_change('fl_menu', 'transition')
+        self.update_buttom()
 
     def open_setting(self) -> None:
         """
@@ -436,6 +599,7 @@ class Menu:
 
         transit('settings')
         screen_change('fl_menu', 'transition')
+        self.update_buttom()
 
     def close(self) -> None:
         """
@@ -466,11 +630,8 @@ class Menu:
         Метод проверки событий
         """
 
-        self.button1.handle_event(event)
-        self.button2.handle_event(event)
-        self.button3.handle_event(event)
-        self.button4.handle_event(event)
-        self.button5.handle_event(event)
+        for button in self.buttons:
+            button.handle_event(event)
 
 
 class Settings:
@@ -485,30 +646,13 @@ class Settings:
 
         music_volume = check('audio', 'music_volume')
         sound_volume = check('audio', 'sound_volume')
-        zn1 = 'Выключить' if check('audio', 'mute_music') else 'Включить'
-        zn2 = 'Выключить' if check('audio', 'mute_sound') else 'Включить'
 
         # Создание фона
-        self.background = pygame.transform.scale(pygame.image.load('images/background/background_setting.jpg'),
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background.png'),
                                                  (800, 600))
 
-        # Создание кнопок
-        self.button1 = Button(
-            [80, 120, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn1, self.onn_off_music, 30,
-            "data/BlackOpsOne-Regular_RUS_by_alince.otf", False
-        )
-        self.button2 = Button(
-            [80, 320, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn2, self.onn_off_sound, 30,
-            "data/BlackOpsOne-Regular_RUS_by_alince.otf", False
-        )
-        self.button3 = Button(
-            [300, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Назад',
-            self.close_seting, 30
-        )
-        self.button4 = Button([60, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Restart',
-                              self.play_game, 30)
-        self.button5 = Button([540, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Menu',
-                              self.return_menu, 30)
+        self.button1, self.button2, self.button3, self.button4, self.button5 = None, None, None, None, None
+        self.update_button()
 
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
@@ -568,8 +712,9 @@ class Settings:
         if check('audio', 'mute_music'):
             self.slider_music.draw()
             self.screen.blit(self.text1, self.text1_rect)
-            text3 = self.font.render(str(int(round(float(f'{check("audio", "music_volume"):.2f}') * 100, 0))), True,
-                                     (255, 255, 255))
+            text3 = self.font.render(
+                str(int(round(float(f'{check("audio", "music_volume"):.2f}') * 100, 0))), True, (255, 255, 255)
+            )
             text3_rect = text3.get_rect(center=(330, 220))
             self.screen.blit(text3, text3_rect)
 
@@ -577,8 +722,9 @@ class Settings:
         if check('audio', 'mute_sound'):
             self.slider_sound.draw()
             self.screen.blit(self.text2, self.text2_rect)
-            text4 = self.font.render(str(int(round(float(f'{check("audio", "sound_volume"):.2f}') * 100, 0))), True,
-                                     (255, 255, 255))
+            text4 = self.font.render(
+                str(int(round(float(f'{check("audio", "sound_volume"):.2f}') * 100, 0))), True, (255, 255, 255)
+            )
             text4_rect = text4.get_rect(center=(370, 420))
             self.screen.blit(text4, text4_rect)
 
@@ -601,11 +747,17 @@ class Settings:
         screen_change('fl_zastavka', 'fl_menu')
         transit('fl_menu')
         screen_change('fl_menu', 'transition')
+        self.update_button()
 
     def play_game(self):
-        play_game()
-        transit('gemplay')
+        loading(True)
+        transit('loading_screen')
         screen_change('settings', 'transition')
+        self.update_button()
+
+        thread = threading.Thread(target=play_game)
+        thread.daemon = True
+        thread.start()
 
     def onn_off_music(self) -> None:
         """
@@ -669,8 +821,50 @@ class Settings:
         """
 
         # Определение в каком окне был пользователь, перед тем как зайти в настройки
-        transit(check('screen', 'past_position'))
+        past_position = check('screen', 'past_position')
+        # if past_position == 'fl_menu':
+        #    menu_update_but()
+        # elif past_position == 'levels':
+        #    levels_update_but()
+        # elif past_position == 'cards':
+        #    card_sel_update_but()
+        # elif past_position == 'card_type':
+        #    card_type_update_but()
+        # elif past_position == 'character_types':
+        #    character_update_but()
+        # elif past_position == 'info_player':
+        #    pl_info_update_but()
+        # elif past_position == 'gemplay':
+        #    game_update_but()
+        transit(past_position)
         screen_change('settings', 'transition')
+        self.update_button()
+
+    def update_button(self):
+        # Создание/бновление кнопок
+
+        zn1 = 'Выключить' if check('audio', 'mute_music') else 'Включить'
+        zn2 = 'Выключить' if check('audio', 'mute_sound') else 'Включить'
+        self.button1 = Button(
+            [80, 120, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn1, self.onn_off_music, 30,
+            "data/BlackOpsOne-Regular_RUS_by_alince.otf", False
+        )
+        self.button2 = Button(
+            [80, 320, 220, 50], screen, (255, 255, 255), (255, 69, 0), (105, 105, 105), zn2, self.onn_off_sound, 30,
+            "data/BlackOpsOne-Regular_RUS_by_alince.otf", False
+        )
+        self.button3 = ImageButton(
+            [280, 510, 240, 60], screen, f"images/buttons/other/back_{randint(0, 3)}.png",
+            "images/buttons/other/back_0.png", self.close_seting, scale=1.0, hover_scale=1.1
+        )
+        self.button4 = ImageButton(
+            [30, 510, 240, 60], screen, "images/buttons/other/restart_0.png", "images/buttons/other/restart_1.png",
+            self.play_game, scale=1.0, hover_scale=1.1
+        )
+        self.button5 = ImageButton(
+            [530, 510, 240, 60], screen, "images/buttons/other/menu_0.png", "images/buttons/other/menu_1.png",
+            self.return_menu, scale=1.0, hover_scale=1.1
+        )
 
 
 class Levels_Selection:
@@ -683,19 +877,14 @@ class Levels_Selection:
         self.screen = screen
 
         # Создание фона
-        self.background = pygame.transform.scale(pygame.image.load('images/background/background_levels.jpg'),
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background.png'),
                                                  (800, 600))
 
         # Загрузка картинок
         self.image = []
 
         # Создание кнопок
-        self.button1, self.button2, self.button3 = None, None, None
-
-        self.button4 = Button([520, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
-                              self.closing_window, 25)
-        self.button5 = Button([80, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
-                              self.open_setting, 25)
+        self.buttons = []
 
         # Создание текста - название окна
         font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
@@ -712,6 +901,7 @@ class Levels_Selection:
         """
 
         transit('settings')
+        setting_update_but()
         screen_change('levels', 'transition')
 
     def closing_window(self) -> None:
@@ -722,35 +912,72 @@ class Levels_Selection:
         setting_value('level', '')
         transit('fl_menu')
         screen_change('levels', 'transition')
+        self.creating_buttons()
 
     def creating_buttons(self):
         # Создание кнопок
-        if check('open_levels', 'easy'):
-            collor = (255, 69, 0)
-        else:
-            collor = (105, 105, 105)
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_0.jpg'), (160, 280)),
-                           [90, 100]])
-        self.button1 = Button([80, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Easy',
-                              card_selection_easy, 30)
+        self.buttons = []
+
+        self.image.append(
+            [pygame.transform.scale(pygame.image.load(f'images/levels/easy.jpg'), (160, 280)), [90, 100]]
+        )
+
+        self.buttons.append(
+            ImageButton(
+                [70, 400, 200, 65], screen, "images/buttons/levels/easy_0.png", "images/buttons/levels/easy_1.png",
+                card_selection_easy, scale=1.0, hover_scale=1.1
+            )
+        )
 
         if check('open_levels', 'normal'):
-            collor, ind = (255, 69, 0), 0
+            img_one, img_two = f'images/buttons/levels/normal_0.png', f'images/buttons/levels/normal_1.png'
+            name, k = f'images/levels/normal.jpg', 1.1
         else:
-            collor, ind = (105, 105, 105), 1
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_1_{ind}.jpg'), (160, 280)),
-                           [90 + 220, 100]])
-        self.button2 = Button([300, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Normal',
-                              card_selection_normal, 30)
+            img_one, img_two = f'images/buttons/levels/close.png', f'images/buttons/levels/close.png'
+            name, k = f'images/levels/close.png', 1.0
+
+        self.image.append(
+            [pygame.transform.scale(pygame.image.load(name), (160, 280)), [90 + 220, 100]]
+        )
+
+        self.buttons.append(
+            ImageButton(
+                [290, 400, 200, 65], screen, img_one, img_two, card_selection_normal, scale=1.0, hover_scale=k
+            )
+        )
 
         if check('open_levels', 'hard'):
-            collor, ind = (255, 69, 0), 0
+            img_one, img_two = f'images/buttons/levels/hard_0.png', f'images/buttons/levels/hard_1.png'
+            name, k = f'images/levels/hard.jpg', 1.1
         else:
-            collor, ind = (105, 105, 105), 1
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/levels/level_2_{ind}.jpg'), (160, 280)),
-                           [90 + 220 * 2, 100]])
-        self.button3 = Button([520, 400, 180, 50], screen, (255, 255, 255), (0, 206, 209), collor, 'Hard',
-                              card_selection_hard, 30)
+            img_one, img_two = f'images/buttons/levels/close.png', f'images/buttons/levels/close.png'
+            name, k = f'images/levels/close.png', 1.0
+
+        self.image.append(
+            [pygame.transform.scale(pygame.image.load(name), (160, 280)), [90 + 220 * 2, 100]]
+        )
+
+        self.buttons.append(
+            ImageButton(
+                [510, 400, 200, 65], screen, img_one, img_two, card_selection_hard, scale=1.0, hover_scale=k
+            )
+        )
+
+        self.update_button()
+
+    def update_button(self):
+        self.buttons.append(
+            ImageButton(
+                [495, 500, 210, 50], screen, f"images/buttons/other/back_{randint(0, 3)}.png",
+                "images/buttons/other/back_0.png", self.closing_window, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [75, 500, 210, 50], screen, "images/buttons/other/settings_0.png",
+                "images/buttons/other/settings_1.png", self.open_setting, scale=1.0, hover_scale=1.1
+            )
+        )
 
     def draw(self) -> None:
         """
@@ -758,11 +985,8 @@ class Levels_Selection:
         """
 
         self.screen.blit(self.background, (0, 0))
-        self.button1.draw()
-        self.button2.draw()
-        self.button3.draw()
-        self.button4.draw()
-        self.button5.draw()
+        for button in self.buttons:
+            button.draw()
         self.screen.blit(self.text_surface, self.text_rect)
         self.screen.blit(self.text, self.text_r)
         for i in self.image:
@@ -774,14 +998,12 @@ class Levels_Selection:
         """
 
         # Проверка событий кнопок
-        if check('open_levels', 'easy'):
-            self.button1.handle_event(event)
-        if check('open_levels', 'normal'):
-            self.button2.handle_event(event)
-        if check('open_levels', 'hard'):
-            self.button3.handle_event(event)
-        self.button4.handle_event(event)
-        self.button5.handle_event(event)
+        for button in range(len(self.buttons)):
+            if button > 2:
+                self.buttons[button].handle_event(event)
+            else:
+                if check('open_levels', ['easy', 'normal', 'hard'][button]):
+                    self.buttons[button].handle_event(event)
 
 
 class Card_Selection:
@@ -794,17 +1016,15 @@ class Card_Selection:
         self.screen = screen
 
         # Создание фона
-        self.background = pygame.transform.scale(pygame.image.load('images/background/background_cards.jpg'),
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background.png'),
                                                  (800, 600))
 
-        self.button1, self.button2, self.button3 = None, None, None
-        self.card_1, self.card_2, self.card_3, self.name = None, None, None, None
-
-        # Создание кнопок
-        self.button4 = Button([570, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
-                              self.closing_window, 25)
-        self.button5 = Button([70, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
-                              self.open_setting, 25)
+        self.card_1, self.card_2, self.card_3, self.level = None, None, None, None
+        self.rating_r, self.rating = None, None
+        self.rt_one, self.rt_r_one = None, None
+        self.rt_two, self.rt_r_two = None, None
+        self.rt_free, self.rt_r_free = None, None
+        self.buttons = []
 
         # Создание текста - название окна
         font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
@@ -848,6 +1068,7 @@ class Card_Selection:
         """
 
         transit('card_type')
+        card_type_update_but()
         screen_change('cards', 'transition')
 
     def open_setting(self) -> None:
@@ -857,6 +1078,7 @@ class Card_Selection:
 
         transit('settings')
         screen_change('cards', 'transition')
+        self.update_botton()
 
     def closing_window(self) -> None:
         """
@@ -866,6 +1088,7 @@ class Card_Selection:
         setting_value('name_card', '')
         transit('levels')
         screen_change('cards', 'transition')
+        self.update_botton()
 
     def draw(self) -> None:
         """
@@ -873,15 +1096,18 @@ class Card_Selection:
         """
 
         self.screen.blit(self.background, (0, 0))
-        self.button1.draw()
-        self.button2.draw()
-        self.button3.draw()
-        self.button4.draw()
-        self.button5.draw()
+        for button in self.buttons:
+            button.draw()
         self.screen.blit(self.text_surface, self.text_rect)
         self.screen.blit(self.text, self.text_r)
         for i in self.image:
             self.screen.blit(i[0], i[1])
+
+        self.screen.blit(self.rating, self.rating_r)
+
+        self.screen.blit(self.rt_one, self.rt_r_one)
+        self.screen.blit(self.rt_two, self.rt_r_two)
+        self.screen.blit(self.rt_free, self.rt_r_free)
 
     def check_event(self, event) -> None:
         """
@@ -889,58 +1115,110 @@ class Card_Selection:
         """
 
         # Проверка событий кнопок
-        if check_open_cards(self.name, self.card_1):
-            self.button1.handle_event(event)
-        if check_open_cards(self.name, self.card_2):
-            self.button2.handle_event(event)
-        if check_open_cards(self.name, self.card_3):
-            self.button3.handle_event(event)
-        self.button4.handle_event(event)
-        self.button5.handle_event(event)
+        for button in range(len(self.buttons)):
+            if button > 2:
+                self.buttons[button].handle_event(event)
+            else:
+                if check_open_cards(self.level, [self.card_1, self.card_2, self.card_3][button]):
+                    self.buttons[button].handle_event(event)
 
     def creating_buttons(self, name1, name2, name3) -> None:
         """
         Метод добавления кнопок
         """
 
+        self.buttons = []
+
         self.card_1 = name1
         self.card_2 = name2
         self.card_3 = name3
 
-        if check('gameplay', 'level') == 'easy':
-            name = 'easy'
-        elif check('gameplay', 'level') == 'normal':
-            name = 'normal'
-        else:
-            name = 'hard'
-        self.name = name
+        self.level = check('gameplay', 'level')
 
-        if check_open_cards(name, name1):
-            collor, n = (75, 0, 130), ''
+        font_2 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 18)
+        rating = check('gameplay', 'rating')
+        self.rating = font_2.render(f"Рейтинг: {rating}", True, (255, 255, 255))
+        if rating < 1000:
+            x = 720
+        elif 1000 < rating < 10000:
+            x = 712
         else:
-            collor, n = (105, 105, 105), '_close'
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/cards/{name1}{n}.jpg'), (160, 280)),
-                           [80, 100]])
-        self.button1 = Button([40, 420, 240, 45], screen, (255, 255, 255), (0, 128, 0), collor, name1, self.card_one,
-                              20, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+            x = 704
+        self.rating_r = self.rating.get_rect(center=(x, 20))
 
-        if check_open_cards(name, name2):
-            collor, n = (75, 0, 130), ''
-        else:
-            collor, n = (105, 105, 105), '_close'
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/cards/{name2}{n}.jpg'), (160, 280)),
-                           [80 + 250, 100]])
-        self.button2 = Button([290, 420, 240, 45], screen, (255, 255, 255), (0, 128, 0), collor, name2, self.card_two,
-                              20, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        self.rt_one = font_2.render(f"{rating}/{rating_cost[name1]}", True, (255, 255, 255))
+        self.rt_r_one = self.rt_one.get_rect(center=(160, 400))
+        self.rt_two = font_2.render(f"{rating}/{rating_cost[name2]}", True, (255, 255, 255))
+        self.rt_r_two = self.rt_two.get_rect(center=(410, 400))
+        self.rt_free = font_2.render(f"{rating}/{rating_cost[name3]}", True, (255, 255, 255))
+        self.rt_r_free = self.rt_free.get_rect(center=(660, 400))
 
-        if check_open_cards(name, name3):
-            collor, n = (75, 0, 130), ''
+        self.image = []
+
+        if check_open_cards(self.level, name1):
+            img_one, img_two = f'images/buttons/cards/{name1}_0.png', f'images/buttons/cards/{name1}_1.png'
+            name, k = f'images/cards/{name1}.png', 1.1
         else:
-            collor, n = (105, 105, 105), '_close'
-        self.image.append([pygame.transform.scale(pygame.image.load(f'images/cards/{name3}{n}.jpg'), (160, 280)),
-                           [80 + 250 * 2, 100]])
-        self.button3 = Button([540, 420, 240, 45], screen, (255, 255, 255), (0, 128, 0), collor, name3, self.card_three,
-                              20, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+            img_one, img_two = f'images/buttons/cards/close.png', f'images/buttons/cards/close.png'
+            name, k = 'images/cards/close.png', 1.0
+
+        self.image.append(
+            [pygame.transform.scale(pygame.image.load(name), (160, 280)), [80, 100]]
+        )
+        self.buttons.append(
+            ImageButton(
+                [45, 420, 230, 50], screen, img_one, img_two, self.card_one, scale=1.0, hover_scale=k
+            )
+        )
+
+        if check_open_cards(self.level, name2):
+            img_one, img_two = f'images/buttons/cards/{name2}_0.png', f'images/buttons/cards/{name2}_1.png'
+            name, k = f'images/cards/{name2}.png', 1.1
+        else:
+            img_one, img_two = f'images/buttons/cards/close.png', f'images/buttons/cards/close.png'
+            name, k = 'images/cards/close.png', 1.0
+
+        self.image.append(
+            [pygame.transform.scale(pygame.image.load(name), (160, 280)), [80 + 250, 100]]
+        )
+        self.buttons.append(
+            ImageButton(
+                [295, 420, 230, 50], screen, img_one, img_two, self.card_two, scale=1.0, hover_scale=k
+            )
+        )
+
+        if check_open_cards(self.level, name3):
+            img_one, img_two = f'images/buttons/cards/{name3}_0.png', f'images/buttons/cards/{name3}_1.png'
+            name, k = f'images/cards/{name3}.png', 1.1
+        else:
+            img_one, img_two = f'images/buttons/cards/close.png', f'images/buttons/cards/close.png'
+            name, k = 'images/cards/close.png', 1.0
+
+        self.image.append(
+            [pygame.transform.scale(pygame.image.load(name), (160, 280)), [80 + 250 * 2, 100]]
+        )
+        self.buttons.append(
+            ImageButton(
+                [545, 420, 230, 50], screen, img_one, img_two, self.card_three, scale=1.0, hover_scale=k
+            )
+        )
+
+        self.update_botton()
+
+    def update_botton(self):
+        # Обновление кнопок
+        self.buttons.append(
+            ImageButton(
+                [550, 500, 210, 50], screen, f"images/buttons/other/back_{randint(0, 3)}.png",
+                "images/buttons/other/back_0.png", self.closing_window, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [55, 500, 210, 50], screen, "images/buttons/other/settings_0.png",
+                "images/buttons/other/settings_1.png", self.open_setting, scale=1.0, hover_scale=1.1
+            )
+        )
 
 
 class Card_Type:
@@ -953,39 +1231,15 @@ class Card_Type:
         self.screen = screen
 
         # Создание фона
-        self.background = pygame.transform.scale(pygame.image.load('images/background/background_cards_type.jpg'),
-                                                 (800, 600))
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background.png'), (800, 600))
 
-        # Создание кнопок
-        self.button1 = Button([100, 430, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Choco',
-                              self.choice_choco, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button2 = Button([315, 430, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Grass',
-                              self.choice_grass, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button3 = Button([530, 430, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Snow',
-                              self.choice_snow, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button4 = Button([100, 290, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Cake',
-                              self.choice_cake, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button5 = Button([315, 290, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Dirt',
-                              self.choice_dirt, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button6 = Button([530, 290, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Sand',
-                              self.choice_sand, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button7 = Button([100, 150, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Tundra',
-                              self.choice_tundra, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button8 = Button([315, 150, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Castle',
-                              self.choice_castle, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button9 = Button([530, 150, 150, 40], screen, (255, 255, 255), (30, 140, 255), (200, 20, 130), 'Purple',
-                              self.choice_purple, 25, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-
-        self.button10 = Button([500, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
-                               self.closing_window, 25)
-        self.button11 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
-                               self.open_setting, 25)
+        self.buttons = []
 
         # Создание изображений
         self.images = []
         for i in range(9):
             self.images.append(
-                [pygame.image.load(f'images/tiles/{i + 1}_1.png'), [140 + 215 * (i // 3), 70 + 140 * (i % 3)]])
+                [pygame.image.load(f'images/tiles/{list_tiles[i]}/1.png'), [140 + 215 * (i // 3), 70 + 140 * (i % 3)]])
 
         # Создание текста - название окна
         font_1 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
@@ -995,6 +1249,76 @@ class Card_Type:
         font_2 = pygame.font.Font("data/Docker.ttf", 25)
         self.text = font_2.render('Выберите тип карты', True, (255, 255, 255))
         self.text_r = self.text.get_rect(center=(400, 40))
+
+    def update_button(self):
+        # Создание кнопок
+        self.buttons = []
+
+        self.buttons.append(
+            ImageButton(
+                [90, 430, 170, 50], screen, "images/buttons/tiles/choco_0.png", "images/buttons/tiles/choco_1.png",
+                self.choice_choco, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [305, 430, 170, 50], screen, "images/buttons/tiles/grass_0.png", "images/buttons/tiles/grass_1.png",
+                self.choice_grass, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [520, 430, 170, 50], screen, "images/buttons/tiles/snow_0.png", "images/buttons/tiles/snow_1.png",
+                self.choice_snow, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(ImageButton(
+            [90, 290, 170, 50], screen, "images/buttons/tiles/cake_0.png", "images/buttons/tiles/cake_1.png",
+            self.choice_cake, scale=1.0, hover_scale=1.1
+        )
+        )
+        self.buttons.append(
+            ImageButton(
+                [305, 290, 170, 50], screen, "images/buttons/tiles/dirt_0.png", "images/buttons/tiles/dirt_1.png",
+                self.choice_dirt, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [520, 290, 170, 50], screen, "images/buttons/tiles/sand_0.png", "images/buttons/tiles/sand_1.png",
+                self.choice_sand, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [90, 150, 170, 50], screen, "images/buttons/tiles/tundra_0.png", "images/buttons/tiles/tundra_1.png",
+                self.choice_tundra, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [305, 150, 170, 50], screen, "images/buttons/tiles/castle_0.png", "images/buttons/tiles/castle_1.png",
+                self.choice_castle, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [520, 150, 170, 50], screen, "images/buttons/tiles/purple_0.png", "images/buttons/tiles/purple_1.png",
+                self.choice_purple, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [500, 500, 210, 50], screen, f"images/buttons/other/back_{randint(0, 3)}.png",
+                "images/buttons/other/back_0.png", self.closing_window, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [65, 500, 210, 50], screen, "images/buttons/other/settings_0.png",
+                "images/buttons/other/settings_1.png", self.open_setting, scale=1.0, hover_scale=1.1
+            )
+        )
 
     def choice_choco(self) -> None:
         """
@@ -1074,7 +1398,9 @@ class Card_Type:
         """
 
         transit('character_types')
+        character_update_but()
         screen_change('card_type', 'transition')
+        self.update_button()
 
     def open_setting(self) -> None:
         """
@@ -1083,6 +1409,7 @@ class Card_Type:
 
         transit('settings')
         screen_change('card_type', 'transition')
+        self.update_button()
 
     def closing_window(self) -> None:
         """
@@ -1092,6 +1419,7 @@ class Card_Type:
         setting_value('type_card', '')
         transit('cards')
         screen_change('card_type', 'transition')
+        self.update_button()
 
     def draw(self) -> None:
         """
@@ -1099,17 +1427,8 @@ class Card_Type:
         """
 
         self.screen.blit(self.background, (0, 0))
-        self.button1.draw()
-        self.button2.draw()
-        self.button3.draw()
-        self.button4.draw()
-        self.button5.draw()
-        self.button6.draw()
-        self.button7.draw()
-        self.button8.draw()
-        self.button9.draw()
-        self.button10.draw()
-        self.button11.draw()
+        for button in self.buttons:
+            button.draw()
         self.screen.blit(self.text_surface, self.text_rect)
         self.screen.blit(self.text, self.text_r)
 
@@ -1122,17 +1441,8 @@ class Card_Type:
         """
 
         # Проверка событий кнопок
-        self.button1.handle_event(event)
-        self.button2.handle_event(event)
-        self.button3.handle_event(event)
-        self.button4.handle_event(event)
-        self.button5.handle_event(event)
-        self.button6.handle_event(event)
-        self.button7.handle_event(event)
-        self.button8.handle_event(event)
-        self.button9.handle_event(event)
-        self.button10.handle_event(event)
-        self.button11.handle_event(event)
+        for button in self.buttons:
+            button.handle_event(event)
 
 
 class Character_Types:
@@ -1144,26 +1454,18 @@ class Character_Types:
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
 
-        self.button1, self.button2, self.button3 = None, None, None
         self.name1, self.name2, self.name3 = None, None, None
+        self.rating_r, self.rating = None, None
+        self.rt_one, self.rt_r_one = None, None
+        self.rt_two, self.rt_r_two = None, None
+        self.rt_free, self.rt_r_free = None, None
+        self.button = None
+        self.buttons = []
 
         # Создание фона
-        self.background = pygame.transform.scale(pygame.image.load('images/background/background_character_types.jpg'),
+        self.background = pygame.transform.scale(pygame.image.load('images/background/background.png'),
                                                  (800, 600))
 
-        # Создание кнопок
-        self.button4 = Button([570, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
-                              self.closing_window, 25)
-        self.button5 = Button([70, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
-                              self.open_setting, 25)
-        self.button6 = Button([300, 490, 220, 60], screen, (255, 255, 255), (0, 255, 0), (255, 99, 71), 'Начать игру',
-                              self.play_game, 30, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button7 = Button([200, 410, 80, 22], screen, (255, 255, 255), (250, 21, 133), (150, 0, 0), 'info',
-                              self.open_win_info_pl_one, 15, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button8 = Button([450, 410, 80, 22], screen, (255, 255, 255), (250, 21, 133), (150, 0, 0), 'info',
-                              self.open_win_info_pl_two, 15, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
-        self.button9 = Button([700, 410, 80, 22], screen, (255, 255, 255), (250, 21, 133), (150, 0, 0), 'info',
-                              self.open_win_info_pl_three, 15, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
         self.start = False
         self.fl = False
         self.count = 0
@@ -1172,90 +1474,122 @@ class Character_Types:
         self.pl_image = []
 
         # Создание текста
-        font_1 = pygame.font.Font("data/Docker.ttf", 25)
+        font_1 = pygame.font.Font("data/Docker.ttf", 30)
         self.text = font_1.render('Выберите персонажа', True, (255, 255, 255))
-        self.text_r = self.text.get_rect(center=(400, 40))
+        self.text_r = self.text.get_rect(center=(400, 60))
 
         # Создание текста - название окна
         font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
         self.text_surface = font.render('Character Types', True, (255, 255, 255))
         self.text_rect = self.text_surface.get_rect(center=(76, 10))
 
-    def chek_open_pl_coll(self, name, fl=False):
+    def chek_open_pl_but(self, name, fl=False):
         if check('open_characters', name):
             if fl:
-                return (30, 145, 255)
+                return f'images/buttons/characters/{name}_2.png', f'images/buttons/characters/{name}_1.png', 1.0, 1.1
             else:
-                return (75, 0, 130)
+                return f'images/buttons/characters/{name}_0.png', f'images/buttons/characters/{name}_1.png', 1.0, 1.1
         else:
-            return (105, 105, 105)
+            return f'images/buttons/characters/close.png', f'images/buttons/characters/close.png', 1.0, 1.0
 
     def chek_open_pl_img(self, name):
         if check('open_characters', name):
-            return 'open'
+            return f'open/{name}'
         else:
-            return 'close'
+            return f'close/{randint(0, 2)}'
 
     def player_one(self) -> None:
         # Добавление имени выбраннного персонажа
         setting_value('character', self.name1)
         self.start = True
 
-        self.button1 = Button(
-            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1, True),
-            self.name1,
-            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        self.buttons = []
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name1, True)
+        self.buttons.append(
+            ImageButton(
+                [40, 420, 240, 50], screen, img_one, img_two, self.player_one, scale=k1, hover_scale=k2
+            )
         )
-        self.button2 = Button(
-            [290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), self.chek_open_pl_coll(self.name2),
-            self.name2,
-            self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name2)
+        self.buttons.append(
+            ImageButton(
+                [290, 420, 240, 50], screen, img_one, img_two, self.player_two, scale=k1, hover_scale=k2
+            )
         )
-        self.button3 = Button(
-            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3), self.name3,
-            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name3)
+        self.buttons.append(
+            ImageButton(
+                [540, 420, 240, 50], screen, img_one, img_two, self.player_three, scale=k1, hover_scale=k2
+            )
         )
+
         self.fl = True
+        self.update_button()
 
     def player_two(self) -> None:
         # Добавление имени выбраннного персонажа
         setting_value('character', self.name2)
         self.start = True
 
-        self.button1 = Button(
-            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1), self.name1,
-            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        self.buttons = []
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name1)
+        self.buttons.append(
+            ImageButton(
+                [40, 420, 240, 50], screen, img_one, img_two, self.player_one, scale=k1, hover_scale=k2
+            )
         )
-        self.button2 = Button(
-            [290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), self.chek_open_pl_coll(self.name2, True),
-            self.name2, self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name2, True)
+        self.buttons.append(
+            ImageButton(
+                [290, 420, 240, 50], screen, img_one, img_two, self.player_two, scale=k1, hover_scale=k2
+            )
         )
-        self.button3 = Button(
-            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3), self.name3,
-            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name3)
+        self.buttons.append(
+            ImageButton(
+                [540, 420, 240, 50], screen, img_one, img_two, self.player_three, scale=k1, hover_scale=k2
+            )
         )
+
         self.fl = True
+        self.update_button()
 
     def player_three(self) -> None:
         # Добавление имени выбраннного персонажа
         setting_value('character', self.name3)
         self.start = True
 
-        self.button1 = Button(
-            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1), self.name1,
-            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        self.buttons = []
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name1)
+        self.buttons.append(
+            ImageButton(
+                [40, 420, 240, 50], screen, img_one, img_two, self.player_one, scale=k1, hover_scale=k2
+            )
         )
-        self.button2 = Button(
-            [290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), self.chek_open_pl_coll(self.name2),
-            self.name2,
-            self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name2)
+        self.buttons.append(
+            ImageButton(
+                [290, 420, 240, 50], screen, img_one, img_two, self.player_two, scale=k1, hover_scale=k2
+            )
         )
-        self.button3 = Button(
-            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3, True),
-            self.name3,
-            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name3, True)
+        self.buttons.append(
+            ImageButton(
+                [540, 420, 240, 50], screen, img_one, img_two, self.player_three, scale=k1, hover_scale=k2
+            )
         )
+
         self.fl = True
+        self.update_button()
 
     def open_setting(self) -> None:
         """
@@ -1264,17 +1598,16 @@ class Character_Types:
 
         transit('settings')
         screen_change('character_types', 'transition')
+        self.update_button()
 
     def play_game(self):
         """
         Запуск загрузки
         """
 
-        # time.sleep(0.2)
-
-        loading()
         transit('loading_screen')
         screen_change('character_types', 'transition')
+        loading(True)
 
         thread = threading.Thread(target=play_game)
         thread.daemon = True
@@ -1316,21 +1649,21 @@ class Character_Types:
             self.count, self.fl = 0, True
 
         self.screen.blit(self.background, (0, 0))
-        self.button1.draw()
-        self.button2.draw()
-        self.button3.draw()
-        self.button4.draw()
-        self.button5.draw()
-        self.button7.draw()
-        self.button8.draw()
-        self.button9.draw()
+        for button in self.buttons:
+            button.draw()
         if self.start and self.fl:
-            self.button6.draw()
+            self.button.draw()
         self.screen.blit(self.text_surface, self.text_rect)
         self.screen.blit(self.text, self.text_r)
         for i in range(len(self.pl_image)):
             size = self.pl_image[i].get_size()
             self.screen.blit(self.pl_image[i], (40 + 250 * i + ((240 - size[0]) // 2), 170))
+
+        self.screen.blit(self.rating, self.rating_r)
+
+        self.screen.blit(self.rt_one, self.rt_r_one)
+        self.screen.blit(self.rt_two, self.rt_r_two)
+        self.screen.blit(self.rt_free, self.rt_r_free)
 
     def check_event(self, event) -> None:
         """
@@ -1338,19 +1671,15 @@ class Character_Types:
         """
 
         # Проверка событий кнопок
-        if check('open_characters', self.name1):
-            self.button1.handle_event(event)
-        if check('open_characters', self.name2):
-            self.button2.handle_event(event)
-        if check('open_characters', self.name3):
-            self.button3.handle_event(event)
-        self.button4.handle_event(event)
-        self.button5.handle_event(event)
-        self.button7.handle_event(event)
-        self.button8.handle_event(event)
-        self.button9.handle_event(event)
+        for button in range(len(self.buttons)):
+            if button > 5:
+                self.buttons[button].handle_event(event)
+            else:
+                if check('open_characters', [self.name1, self.name2, self.name3][button % 3]):
+                    self.buttons[button].handle_event(event)
+
         if self.start:
-            self.button6.handle_event(event)
+            self.button.handle_event(event)
 
     def creating_buttons(self, name1, name2, name3) -> None:
         """
@@ -1363,30 +1692,39 @@ class Character_Types:
         self.name3 = name3
 
         # Создание кнопок
-        self.button1 = Button(
-            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1), self.name1,
-            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        self.buttons = []
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name1)
+        self.buttons.append(
+            ImageButton(
+                [40, 420, 240, 50], screen, img_one, img_two, self.player_one, scale=k1, hover_scale=k2
+            )
         )
-        self.button2 = Button(
-            [290, 440, 240, 40], screen, (255, 255, 255), (255, 20, 150), self.chek_open_pl_coll(self.name2),
-            self.name2,
-            self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name2)
+        self.buttons.append(
+            ImageButton(
+                [290, 420, 240, 50], screen, img_one, img_two, self.player_two, scale=k1, hover_scale=k2
+            )
         )
-        self.button3 = Button(
-            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3), self.name3,
-            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name3)
+        self.buttons.append(
+            ImageButton(
+                [540, 420, 240, 50], screen, img_one, img_two, self.player_three, scale=k1, hover_scale=k2
+            )
         )
 
         # Создание изображений персонажей
         self.pl_image = []
         self.pl_image.append(
-            pygame.image.load(f'images/players/{self.chek_open_pl_img(name1)}/{name1}.png').convert_alpha()
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(name1)}.png').convert_alpha()
         )
         self.pl_image.append(
-            pygame.image.load(f'images/players/{self.chek_open_pl_img(name2)}/{name2}.png').convert_alpha()
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(name2)}.png').convert_alpha()
         )
         self.pl_image.append(
-            pygame.image.load(f'images/players/{self.chek_open_pl_img(name3)}/{name3}.png').convert_alpha()
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(name3)}.png').convert_alpha()
         )
 
         self.start = False
@@ -1394,18 +1732,100 @@ class Character_Types:
         self.count = 0
 
     def rollback(self):
-        # Кнопки
-        self.button1 = Button(
-            [40, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name1), self.name1,
-            self.player_one, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+        # Создание кнопок
+        self.buttons = []
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name1)
+        self.buttons.append(
+            ImageButton(
+                [40, 420, 240, 50], screen, img_one, img_two, self.player_one, scale=k1, hover_scale=k2
+            )
         )
-        self.button2 = Button(
-            [290, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name2), self.name2,
-            self.player_two, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name2)
+        self.buttons.append(
+            ImageButton(
+                [290, 420, 240, 50], screen, img_one, img_two, self.player_two, scale=k1, hover_scale=k2
+            )
         )
-        self.button3 = Button(
-            [540, 440, 240, 40], screen, (255, 255, 255), (0, 128, 0), self.chek_open_pl_coll(self.name3), self.name3,
-            self.player_three, 18, "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+
+        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name3)
+        self.buttons.append(
+            ImageButton(
+                [540, 420, 240, 50], screen, img_one, img_two, self.player_three, scale=k1, hover_scale=k2
+            )
+        )
+
+        self.update_button()
+
+    def update_button(self):
+        # Обновление кнопок
+        font_2 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 18)
+        rating = check('gameplay', 'rating')
+        self.rating = font_2.render(f"Рейтинг: {rating}", True, (255, 255, 255))
+        if rating < 1000:
+            x = 720
+        elif 1000 < rating < 10000:
+            x = 712
+        else:
+            x = 704
+        self.rating_r = self.rating.get_rect(center=(x, 20))
+
+        self.rt_one = font_2.render(f"{rating}/{rating_character[self.name1]}", True, (255, 255, 255))
+        self.rt_r_one = self.rt_one.get_rect(center=(110, 395))
+        self.rt_two = font_2.render(f"{rating}/{rating_character[self.name2]}", True, (255, 255, 255))
+        self.rt_r_two = self.rt_two.get_rect(center=(360, 395))
+        self.rt_free = font_2.render(f"{rating}/{rating_character[self.name3]}", True, (255, 255, 255))
+        self.rt_r_free = self.rt_free.get_rect(center=(610, 395))
+
+        if check('open_characters', self.name1):
+            col1, col2 = (200, 150, 0), (150, 0, 0)
+        else:
+            col1, col2 = (120, 120, 120), (120, 120, 120)
+        self.buttons.append(
+            Button(
+                [200, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_win_info_pl_one, 15,
+                "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+            )
+        )
+
+        if check('open_characters', self.name2):
+            col1, col2 = (210, 150, 0), (150, 0, 0)
+        else:
+            col1, col2 = (120, 120, 120), (120, 120, 120)
+        self.buttons.append(
+            Button(
+                [450, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_win_info_pl_two, 15,
+                "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+            )
+        )
+
+        if check('open_characters', self.name3):
+            col1, col2 = (200, 150, 0), (150, 0, 0)
+        else:
+            col1, col2 = (120, 120, 120), (120, 120, 120)
+        self.buttons.append(
+            Button(
+                [700, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_win_info_pl_three, 15,
+                "data/BlackOpsOne-Regular_RUS_by_alince.otf"
+            )
+        )
+
+        self.buttons.append(
+            ImageButton(
+                [550, 500, 210, 50], screen, f"images/buttons/other/back_{randint(0, 3)}.png",
+                "images/buttons/other/back_0.png", self.closing_window, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [55, 500, 210, 50], screen, "images/buttons/other/settings_0.png",
+                "images/buttons/other/settings_1.png", self.open_setting, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.button = ImageButton(
+            [290, 490, 240, 70], screen, "images/buttons/other/start_game_0.png",
+            "images/buttons/other/start_game_1.png", self.play_game, scale=1.0, hover_scale=1.1
         )
 
 
@@ -1414,11 +1834,14 @@ class LoadingScreen:
         self.screen = screen
 
         self.progress = None
-        self.rotation, self.message, self.font, self.clock, self.step = None, None, None, None, None
+        self.rotation, self.message, self.font, self.clock, self.step, self.fl = None, None, None, None, None, None
 
         # Создание фона
-        self.background = pygame.transform.scale(pygame.image.load('images/background/background_loading.jpg'),
-                                                 (800, 600))
+        self.background = pygame.transform.scale(
+            pygame.image.load('images/background/background_loading.jpg'), (800, 600)
+        )
+
+        self.pl_music = True
 
     def draw(self):
         self.screen.blit(self.background, (0, 0))
@@ -1442,6 +1865,12 @@ class LoadingScreen:
         pygame.display.flip()
 
     def update(self):
+        if self.pl_music:
+            pygame.mixer.music.load('data/file_music/loading.mp3')
+            pygame.mixer.music.set_volume(check('audio', 'music_volume'))
+            pygame.mixer.music.play(-1)
+            self.pl_music = False
+
         self.progress = self.step / 20
         self.message = f"Loading... ({int(self.progress * 100)}%)"
 
@@ -1449,23 +1878,89 @@ class LoadingScreen:
         if self.rotation >= 360:
             self.rotation = 0
 
-        time.sleep(0.1)
+        time.sleep(0.03)
         self.step += randint(1, 2)
         # if self.step == 14:
         #     play_game()
-        if self.step > 20:
+        if self.step > 20 and self.fl:
             transit('gemplay')
+            screen_change('loading_screen', 'transition')
+            pygame.mixer.music.pause()
+        elif self.step > 20 and not self.fl:
+            music_menu()
+            transit(check('screen', 'past_position'))
             screen_change('loading_screen', 'transition')
 
         self.draw()
 
-    def updaute(self):
+    def updaute(self, fl):
+        self.pl_music = True
         self.progress = 0.0
         self.rotation = 0
         self.message = "Loading..."
         self.font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 40)
         self.clock = pygame.time.Clock()
         self.step = 0
+        self.fl = fl
+
+
+class ImageButton:
+    """
+    Класс, реализующий кнопку с изображением.
+    """
+
+    def __init__(self, coord, screen, image_path, hover_image_path, funk, scale=1.0, hover_scale=1.2):
+        """
+        Метод, который создаёт экземпляры класса и присваивает им полученные значения.
+        """
+        self.screen = screen
+        self.image = pygame.transform.scale(pygame.image.load(image_path).convert_alpha(), coord[2:])
+        self.hover_image = pygame.image.load(hover_image_path).convert_alpha()
+        self.funk = funk  # Функция для вызова при нажатии
+        self.scale = scale
+        self.hover_scale = hover_scale
+        self.current_image = self.image
+        self.rect = self.current_image.get_rect(topleft=coord[:2])  # Изначальный rect на основе исходного изображения
+        self.original_width = self.rect.width
+        self.original_height = self.rect.height
+        self.is_hovered = False
+        self.update_image()  # Первоначальное масштабирование
+
+    def update_image(self):
+        """Обновляет изображение и rect в соответствии с текущим масштабом."""
+        scale = self.hover_scale if self.is_hovered else self.scale
+        width = int(self.original_width * scale)
+        height = int(self.original_height * scale)
+        image = self.hover_image if self.is_hovered else self.image
+        self.current_image = pygame.transform.scale(image, (width, height))
+        # Обновляем rect, сохраняя центр кнопки на месте
+        center = self.rect.center
+        self.rect = self.current_image.get_rect(center=center)
+
+    def draw(self):
+        """
+        Метод отрисовки кнопки.
+        """
+        self.screen.blit(self.current_image, self.rect)
+
+    def handle_event(self, event):
+        """
+        Метод, который обрабатывает события, связанные с кнопкой.
+        """
+        if event.type == pygame.MOUSEMOTION:
+            if self.rect.collidepoint(event.pos):
+                if not self.is_hovered:
+                    self.is_hovered = True
+                    self.update_image()  # Обновляем изображение при наведении
+            else:
+                if self.is_hovered:
+                    self.is_hovered = False
+                    self.update_image()  # Возвращаем исходное изображение
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if self.is_hovered and self.funk:
+                self.funk()  # Вызов функции
+                play_sound()
 
 
 class Button:
@@ -1474,30 +1969,27 @@ class Button:
     """
 
     def __init__(self, coord, screen, collor_text, hover_color, collor_button, text, funk, zn, font="data/Docker.ttf",
-                 fl=True) -> None:
+                 fl=True, scale=1.0, hover_scale=1.1) -> None:
         """
         Метод, который создаёт экземпляры класса и присваивает им полученные значения
         """
-
         # Задаёт координаты
-        self.rect = pygame.Rect(coord)
-
+        self.original_rect = pygame.Rect(coord)  # Сохраняем оригинальные координаты
+        self.rect = self.original_rect.copy()  # rect для текущего состояния (с учетом масштаба)
         # Флаг отслеживания наведения мыши
         self.fl = fl
-
         # Сохранение как экземпляр класса объект окна
         self.screen = screen
-
         # Присваивание цветов объектам
         self.collor_text = collor_text
         self.collor_button = collor_button
         self.hover_color = hover_color
-
         # Сохранение ссылки на функцию, которая будет вызываться по нажатию на кнопку
         self.funk = funk
-
         # Задание шрифта
-        self.font = pygame.font.Font(font, zn)
+        self.font_name = font  # Сохраняем имя шрифта
+        self.font_size = zn  # Сохраняем размер шрифта
+        self.font = pygame.font.Font(font, zn)  # Создаем шрифт
 
         # Реализация текста для кнопки
         self.text = text
@@ -1506,52 +1998,75 @@ class Button:
 
         # Флаг, показывающий находится ли курсор на кнопке
         self.hove = False
+        self.scale = scale  # Изначальный масштаб
+        self.hover_scale = hover_scale  # Масштаб при наведении
+
+        self.update_scale()  # Применяем начальный масштаб
+
+    def update_font(self):
+        """Обновляет шрифт и текстовую поверхность"""
+        self.font = pygame.font.Font(self.font_name,
+                                     int(self.font_size * (self.hover_scale if self.hove else self.scale)))
+        self.text_surface = self.font.render(self.text, True, self.collor_text)
+        self.text_rect = self.text_surface.get_rect(center=self.rect.center)
+
+    def update_scale(self):
+        """Обновляет размер кнопки"""
+        scale = self.hover_scale if self.hove else self.scale
+        width = int(self.original_rect.width * scale)
+        height = int(self.original_rect.height * scale)
+        center = self.rect.center  # Сохраняем центр
+        self.rect = pygame.Rect(0, 0, width, height)  # Создаем новый rect
+        self.rect.center = center  # Восстанавливаем центр
+        self.update_font()  # Обновляем шрифт при изменении размера
 
     def draw(self) -> None:
         """
         Метод отрисовки кнопки
         """
-
         # Рисование прямоугольника по заданным параметрам
         pygame.draw.rect(self.screen, (self.collor_button if not self.hove else self.hover_color), self.rect)
-
         # Отображение текста кнопки, поверх прямоугольника
         self.screen.blit(self.text_surface, self.text_rect)
 
     def handle_event(self, event) -> None:
         """
-        Метод, который обрабатывает события связанные с кнопкой
+        Метод, который обрабатывает события, связанные с кнопкой
         """
-
         # Проверяет тип события (наведения на кнопку курсора)
         if event.type == pygame.MOUSEMOTION:
-            self.hove = self.rect.collidepoint(event.pos)
+            if self.rect.collidepoint(event.pos):
+                if not self.hove:
+                    self.hove = True
+                    self.update_scale()  # Обновляем размер
+            else:
+                if self.hove:
+                    self.hove = False
+                    self.update_scale()  # Возвращаем размер
+
         # Проверяет тип события (нажатия на кнопку курсором)
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             if self.hove and self.funk:
                 # Вызов функций по нажатию кнопоки
                 play_sound()
                 self.funk()
-
                 if self.fl:
                     self.hove = False
-
                 self.check_text()
 
     def check_text(self) -> None:
         """
         Класс изменяющий текст кнопок
         """
-
         # При тексте "Выключить" на кнопке он заменяется на "Включить"
         if self.text == 'Выключить':
             self.text = 'Включить'
-            self.text_surface = self.font.render(self.text, True, self.collor_text)
+            self.update_font()  # Обновляем текст
             self.text_rect = self.text_surface.get_rect(center=self.rect.center)
         # При тексте "Включить" на кнопке он заменяется на "Выключить"
         elif self.text == 'Включить':
             self.text = 'Выключить'
-            self.text_surface = self.font.render(self.text, True, self.collor_text)
+            self.update_font()  # Обновляем текст
             self.text_rect = self.text_surface.get_rect(center=self.rect.center)
 
 
@@ -1641,6 +2156,142 @@ class Slider:
                 volume_change(self.value, self.name)
 
 
+class Improvement_character:
+    def __init__(self, screen):
+        self.character, self.price = None, None
+        self.damage, self.hp, self.delay = None, None, None
+        self.screen = screen
+        self.buttons = []
+
+    def draw(self) -> None:
+        """
+        Метод отрисовки слайдеров
+        """
+
+        self.screen.fill((0, 0, 0))
+        for button in self.buttons:
+            button.draw()
+
+    def cost_calculation(self):
+        return
+
+    def update_button(self, name_character):
+        self.buttons = []
+        self.character = name_character
+
+        with open(f'data/characteristics_character/{name_character}.txt', 'r', encoding='utf8') as file:
+            data = file.read().split('\n')
+
+        self.damage, self.hp, self.delay = data[1], data[0], data[4]
+
+        self.price = level_improvement[character_level[name_character]]
+
+        self.buttons.append(
+            ImageButton(
+                [50, 400, 200, 50], screen, f"images/buttons/price/price_{self.price}_0.png",
+                f"images/buttons/price/price_{self.price}_1.png", self.improvement_damage, scale=1.0,
+                hover_scale=1.1
+            )
+        )
+
+        self.buttons.append(
+            ImageButton(
+                [300, 400, 200, 50], screen, f"images/buttons/price/price_{self.price}_0.png",
+                f"images/buttons/price/price_{self.price}_1.png", self.improvement_hp, scale=1.0, hover_scale=1.1
+            )
+        )
+
+        self.buttons.append(
+            ImageButton(
+                [550, 400, 200, 50], screen, f"images/buttons/price/price_{self.price}_1.png",
+                f"images/buttons/price/price_{self.price}_1.png", self.improvement_delay, scale=1.0,
+                hover_scale=1.1
+            )
+        )
+
+        self.buttons.append(
+            ImageButton(
+                [550, 500, 210, 50], screen, f"images/buttons/other/back_{randint(0, 3)}.png",
+                "images/buttons/other/back_0.png", self.closing_window, scale=1.0, hover_scale=1.1
+            )
+        )
+        self.buttons.append(
+            ImageButton(
+                [55, 500, 210, 50], screen, "images/buttons/other/settings_0.png",
+                "images/buttons/other/settings_1.png", self.open_setting, scale=1.0, hover_scale=1.1
+            )
+        )
+
+    def closing_window(self) -> None:
+        """
+        Метод закрытия окна выбора типа карты
+        """
+
+        setting_value('improvement_character', '')
+        transit('info_player')
+        screen_change('improvement_character', 'transition')
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        transit('settings')
+        screen_change('improvement_character', 'transition')
+        self.update_button(self.character)
+
+    def improvement_damage(self):
+        max_damage = maximum_improvement[self.character]['damage']
+
+        if check('gameplay', 'coins') > self.price:
+            if self.damage < max_damage:
+                self.damage += 1
+
+        data = self.read_data()
+        data[1] = self.damage
+        self.write_data([i + '\n' for i in data[:-1]] + [data[-1]])
+
+    def improvement_hp(self):
+        max_hp = maximum_improvement[self.character]['hp']
+
+        if check('gameplay', 'coins') > self.price:
+            if self.hp < max_hp:
+                self.hp += 1
+
+        data = self.read_data()
+        data[0] = self.hp
+        self.write_data([i + '\n' for i in data[:-1]] + [data[-1]])
+
+    def improvement_delay(self):
+        max_delay = maximum_improvement[self.character]['delay']
+
+        if check('gameplay', 'coins') > self.price:
+            if self.delay < max_delay:
+                self.delay += 1
+
+        data = self.read_data()
+        data[4] = self.delay
+        self.write_data([i + '\n' for i in data[:-1]] + [data[-1]])
+
+    def read_data(self):
+        with open(f'data/characteristics_character/{self.character}.txt', 'r', encoding='utf8') as file:
+            data = file.read().split('\n')
+
+        return data
+
+    def write_data(self, data):
+        with open(f'data/characteristics_character/{self.character}.txt', 'w', encoding='utf8') as file:
+            file.writelines(data)
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        for button in self.buttons:
+            button.handle_event(event)
+
+
 class ScreenTransition:
     """
     Класс для создания эффекта перехода (затемнения) экрана.
@@ -1686,77 +2337,55 @@ class ScreenTransition:
         self.pos = new_pos
 
 
-class Playear_info:
+class Reset_confirmation:
     def __init__(self, screen):
         self.screen = screen
 
-        self.button1 = Button([560, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
-                              self.closing_window, 25)
-        self.button2 = Button([100, 500, 180, 40], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
-                              self.open_setting, 25)
-        self.image, self.name = None, None
+        self.button1, self.button2 = None, None
+
+        # Создание текста
+        font1 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 30)
+
+        self.text1 = font1.render(f'Вы действительно хотите сбросить', True, (0, 255, 255))
+        self.text_r1 = self.text1.get_rect(center=(400, 150))
+
+        self.text2 = font1.render(f'настройки игры?', True, (255, 255, 0))
+        self.text_r2 = self.text2.get_rect(center=(400, 185))
+
+        font2 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 20)
+
+        self.text3 = font2.render(f'(все ваши достижения и результаты удаляться)', True, (140, 40, 230))
+        self.text_r3 = self.text3.get_rect(center=(400, 235))
+
+        self.update_button()
 
     def draw(self):
         self.screen.fill((0, 0, 0))
-        pygame.draw.rect(self.screen, (105, 105, 105), (100, 80, 400, 400))
-        size = self.image.get_size()
-        self.screen.blit(self.image, (525 + (250 - size[0]) // 2, 105))
-        pygame.draw.rect(self.screen, (255, 0, 0), (525, 80, 250, 250), 5)
-
-        # Создание текста
-        font1 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 27)
-
-        text1 = font1.render(f'Имя персонажа: {self.name}', True, (255, 255, 255))
-        text_r1 = text1.get_rect(center=(300, 120))
-
-        font2 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 24)
-
-        date = check('characteristics', self.name)
-
-        text2 = font2.render(f'Здоровье: {date[0]}', True, pygame.Color('green'))
-        text_r2 = text2.get_rect(center=(300, 200))
-
-        text3 = font2.render(f'Атака: {date[1]}', True, pygame.Color('red'))
-        text_r3 = text3.get_rect(center=(300, 240))
-
-        text4 = font2.render(f'Пыжок: {date[2]}', True, pygame.Color('yellow'))
-        text_r4 = text4.get_rect(center=(300, 280))
-
-        text5 = font2.render(f'Скорость: {date[3]}', True, (0, 255, 255))
-        text_r5 = text5.get_rect(center=(300, 320))
-
-        text6 = font2.render(f'Задержка: {"{:.2f}".format(date[4] / 60)} сек', True, (255, 0, 255))
-        text_r6 = text6.get_rect(center=(300, 360))
-
-        self.screen.blit(text1, text_r1)
-        self.screen.blit(text2, text_r2)
-        self.screen.blit(text3, text_r3)
-        self.screen.blit(text4, text_r4)
-        self.screen.blit(text5, text_r5)
-        self.screen.blit(text6, text_r6)
 
         self.button1.draw()
         self.button2.draw()
 
-    def open_setting(self) -> None:
-        """
-        Метод открытия настроек
-        """
+        self.screen.blit(self.text1, self.text_r1)
+        self.screen.blit(self.text2, self.text_r2)
+        self.screen.blit(self.text3, self.text_r3)
 
-        transit('settings')
-        screen_change('info_player', 'transition')
+    def update_button(self):
+        self.button1 = ImageButton(
+            [500, 400, 200, 80], screen, 'images/buttons/other/yes_0.png', 'images/buttons/other/yes_1.png',
+            self.update, scale=1.0, hover_scale=1.1
+        )
+        self.button2 = ImageButton(
+            [100, 400, 200, 80], screen, 'images/buttons/other/no_0.png', 'images/buttons/other/no_1.png',
+            self.close_window, scale=1.0, hover_scale=1.1
+        )
 
-    def closing_window(self) -> None:
-        """
-        Метод закрытия окна выбора типа карты
-        """
+    def update(self):
+        factory_reset()
 
-        transit('character_types')
-        screen_change('info_player', 'transition')
-
-    def update(self, name):
-        self.name = name
-        self.image = pygame.image.load(f'images/players/open/{name}.png')
+    def close_window(self):
+        transit('fl_menu')
+        screen_change('reset_confirmation', 'transition')
+        self.update_button()
 
     def check_event(self, event) -> None:
         """
@@ -1767,62 +2396,288 @@ class Playear_info:
         self.button2.handle_event(event)
 
 
+class Results:
+    def __init__(self, screen):
+        self.screen = screen
+
+        self.button = None
+        self.list_time, self.list_name_card = [], []
+        self.text1, self.text2, self.text3, self.text4 = None, None, None, None
+        self.text_r1, self.text_r2, self.text_r3, self.text_r4 = None, None, None, None
+        self.text5, self.text6 = None, None
+        self.text_r5, self.text_r6 = None, None
+
+        self.update_button()
+
+    def update_button(self):
+        self.button = ImageButton(
+            [550, 500, 210, 50], screen, f"images/buttons/other/back_{randint(0, 3)}.png",
+            "images/buttons/other/back_0.png", self.closing_window, scale=1.0, hover_scale=1.1
+        )
+
+        font1 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 25)
+        self.list_name_card = []
+        y = 100
+        for i in list_name_card:
+            text = font1.render(i, True, (randint(0, 255), randint(0, 255), randint(0, 255)))
+            text_r = text.get_rect(center=(200, y))
+            y += 45
+            self.list_name_card.append([text, text_r])
+
+        self.text1 = font1.render('Названия карт', True, (255, 255, 255))
+        self.text_r1 = self.text1.get_rect(center=(200, 55))
+
+        self.text2 = font1.render('Наилучшее время', True, (255, 255, 255))
+        self.text_r2 = self.text2.get_rect(center=(600, 55))
+
+        self.text3 = font1.render('Лучший рейтинг:', True, (255, 255, 255))
+        self.text_r3 = self.text3.get_rect(center=(150, 510))
+
+        with open('data/better_time.txt', 'r', encoding='utf8') as file:
+            data = file.read().split('\n')
+            rat = data[0]
+            data_time = data[1:]
+
+        self.text4 = font1.render(rat, True, (255, 215, 0))
+        self.text_r4 = self.text4.get_rect(topleft=(280, 495))
+
+        self.text5 = font1.render('Текущий рейтинг:', True, (255, 255, 255))
+        self.text_r5 = self.text5.get_rect(center=(150, 540))
+
+        self.text6 = font1.render(str(check('gameplay', 'rating')), True, (255, 215, 0))
+        self.text_r6 = self.text6.get_rect(topleft=(280, 525))
+
+        self.list_time = []
+        y = 100
+        for i in data_time:
+            if i != '-':
+                if int(i) < 3600:
+                    time = f'{int(i) // 60}сек'
+                elif int(i) < 216000:
+                    time = f'{int(i) // 3600}мин {int(i) % 3600 // 60}сек'
+                else:
+                    time = f'{int(i) // 216000}ч {int(i) % 216000 // 3600}мин {int(i) % 216000 % 3600 // 60}сек'
+            else:
+                time = '-'
+            text = font1.render(time, True, (0, 255, 255))
+            text_r = text.get_rect(center=(600, y))
+            y += 45
+            self.list_time.append([text, text_r])
+
+    def draw(self):
+        self.screen.fill((0, 0, 0))
+        self.button.draw()
+
+        for card in self.list_name_card:
+            screen.blit(card[0], card[1])
+
+        for time in self.list_time:
+            screen.blit(time[0], time[1])
+
+        for y in range(78, 484, 45):
+            pygame.draw.line(self.screen, (255, 255, 255), [20, y], [780, y], 2)
+        pygame.draw.line(self.screen, (255, 255, 255), [400, 40], [400, 483], 2)
+
+        self.screen.blit(self.text1, self.text_r1)
+        self.screen.blit(self.text2, self.text_r2)
+        self.screen.blit(self.text3, self.text_r3)
+        self.screen.blit(self.text4, self.text_r4)
+        self.screen.blit(self.text5, self.text_r5)
+        self.screen.blit(self.text6, self.text_r6)
+
+    def closing_window(self):
+        transit('fl_menu')
+        screen_change('results', 'transition')
+        self.update_button()
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        self.button.handle_event(event)
+
+
+class Playear_info:
+    def __init__(self, screen):
+        self.screen = screen
+
+        self.buttons = []
+        self.update_button()
+
+        self.image, self.name = None, None
+
+        self.text1, self.text_r1, self.text2, self.text_r2, self.text3 = None, None, None, None, None
+        self.text_r3, self.text4, self.text_r4, self.text5, self.text_r5 = None, None, None, None, None
+        self.text6, self.text_r6 = None, None
+
+    def draw(self):
+        self.screen.fill((0, 0, 0))
+        pygame.draw.rect(self.screen, (105, 105, 105), (100, 80, 400, 400))
+        size = self.image.get_size()
+        self.screen.blit(self.image, (525 + (250 - size[0]) // 2, 105))
+        pygame.draw.rect(self.screen, (255, 0, 0), (525, 80, 250, 250), 5)
+
+        self.screen.blit(self.text1, self.text_r1)
+        self.screen.blit(self.text2, self.text_r2)
+        self.screen.blit(self.text3, self.text_r3)
+        self.screen.blit(self.text4, self.text_r4)
+        self.screen.blit(self.text5, self.text_r5)
+        self.screen.blit(self.text6, self.text_r6)
+
+        for button in self.buttons:
+            button.draw()
+
+    def update_button(self):
+        self.buttons.append(
+            Button(
+                [560, 500, 180, 50], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Назад',
+                self.closing_window, 25
+            )
+        )
+        self.buttons.append(
+            Button(
+                [330, 500, 180, 50], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Прокачать',
+                self.open_improvement, 25
+            )
+        )
+        self.buttons.append(
+            Button(
+                [100, 500, 180, 50], screen, (255, 255, 255), (218, 165, 32), (220, 20, 60), 'Настройки',
+                self.open_setting, 25
+            )
+        )
+
+    def open_improvement(self):
+        """
+        Метод открытия окна улучшения персонажа
+        """
+
+        update_improvement(self.name)
+        transit('improvement_character')
+        setting_update_but()
+        screen_change('info_player', 'transition')
+
+    def open_setting(self) -> None:
+        """
+        Метод открытия настроек
+        """
+
+        transit('settings')
+        setting_update_but()
+        screen_change('info_player', 'transition')
+
+    def closing_window(self) -> None:
+        """
+        Метод закрытия окна выбора типа карты
+        """
+
+        transit('character_types')
+        character_update_but()
+        screen_change('info_player', 'transition')
+
+    def update(self, name):
+        self.name = name
+        self.image = pygame.image.load(f'images/players/open/{name}.png')
+
+        # Создание текста
+        font1 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 27)
+
+        self.text1 = font1.render(f'Имя персонажа: {self.name}', True, (255, 255, 255))
+        self.text_r1 = self.text1.get_rect(center=(300, 120))
+
+        font2 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 24)
+
+        date = check('characteristics', self.name)
+
+        self.text2 = font2.render(f'Здоровье: {date[0]}', True, pygame.Color('green'))
+        self.text_r2 = self.text2.get_rect(center=(300, 200))
+
+        self.text3 = font2.render(f'Атака: {date[1]}', True, pygame.Color('red'))
+        self.text_r3 = self.text3.get_rect(center=(300, 240))
+
+        self.text4 = font2.render(f'Пыжок: {date[2]}', True, pygame.Color('yellow'))
+        self.text_r4 = self.text4.get_rect(center=(300, 280))
+
+        self.text5 = font2.render(f'Скорость: {date[3]}', True, (0, 255, 255))
+        self.text_r5 = self.text5.get_rect(center=(300, 320))
+
+        self.text6 = font2.render(f'Задержка: {"{:.2f}".format(date[4] / 60)} сек', True, (255, 0, 255))
+        self.text_r6 = self.text6.get_rect(center=(300, 360))
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        for button in self.buttons:
+            button.handle_event(event)
+
+
 class Gamplay:
     def __init__(self, screen):
         self.screen = screen
         self.level, self.name_card, self.background_map, self.cards, self.tile_images = None, None, None, None, None
-        self.character, self.type_card_background, self.tiles, self.player, self.numb = None, None, None, None, None
+        self.character, self.tiles, self.port, self.player, self.numb = None, None, None, None, None
         self.time, self.dis_time, self.dis_time_rect, self.start_time, self.date_start = None, None, None, None, None
         self.spis_enemy = []
-        self.button_setting = Button([6, 6, 32, 32], screen, (255, 255, 255), (100, 100, 100), (0, 0, 0), 'X',
-                                     self.open_setting, 32, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
+        self.count, self.ind, self.mobs, self.coin = 0, 0, 0, 0
+        self.anim_port = [
+            pygame.transform.scale(pygame.image.load(f'images/portal/{i}.png'), (32, 80)) for i in range(4)
+        ]
+        self.image_coin = pygame.transform.scale(pygame.image.load('images/coin/0.png'), (32, 32))
+        self.button_setting = None
+        self.update_button()
 
     def loading(self):
         self.time = 0
         self.start_time = f'{datetime.datetime.now().time():%H:%M}'
         self.date_start = '.'.join(f'{datetime.datetime.now().date()}'.split('-')[::-1])
         self.level = check('gameplay', 'level')
+        self.coin, self.mobs = 0, 0
         self.name_card = check('gameplay', 'name_card')
         type_card = check('gameplay', 'type_card')
-        self.character = check('gameplay', 'character')
-        self.type_card_background = check('type_card_background', type_card)
         self.background_map = pygame.transform.scale(
-            pygame.image.load(check('type_card_background', type_card)).convert_alpha(), (800, 600))
+            pygame.image.load(type_card_background[type_card]).convert_alpha(), (800, 600))
         self.tiles = pygame.sprite.Group()
         self.generate_map(type_card)
         self.creating_enemy()
-        sl_player = {
-            'Блейв': self.Blave(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                                self.collision_with_mobs),
-            'Золтан': self.Zoltan(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                                  self.collision_with_mobs),
-            'Кассиан': self.Cassian(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                                    self.collision_with_mobs),
-            'Келтор': self.Keltor(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                                  self.collision_with_mobs),
-            'Лиам': self.Liam(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                              self.collision_with_mobs),
-            'Рен': self.Ren(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                            self.collision_with_mobs),
-            'Финн': self.Finn(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                              self.collision_with_mobs),
-            'Эйден': self.Aiden(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                                self.collision_with_mobs),
-            'Элиза': self.Eliza(self.screen, check('cords', check('gameplay', 'name_card')), self.tiles, self.numb,
-                                self.collision_with_mobs)
-        }
-        self.player = sl_player[check('gameplay', 'character')]
+        self.port = portal_cords[self.name_card]
+        self.player = self.Player()
+        self.player.definition_character(
+            check('gameplay', 'character'), self.screen, spawn_coordinates[self.name_card], self.tiles, self.numb,
+            self.collision_with_mobs
+        )
+
+    def update_button(self):
+        # Сщздание/обновление кнопок
+        self.button_setting = Button([6, 6, 32, 32], screen, (255, 255, 255), (100, 100, 100), (0, 0, 0), 'X',
+                                     self.open_setting, 32, "data/BlackOpsOne-Regular_RUS_by_alince.otf")
 
     def draw(self):
         self.time += 1
+        self.teleport()
         self.draw_map()
         self.draw_enemy()
         self.draw_stats()
+        self.draw_portal()
+        self.draw_coin()
         self.player.update()
+
+    def draw_portal(self):
+        self.count += 1
+        if self.count > 10:
+            self.count = 0
+            self.ind = (self.ind + 1) % len(self.anim_port)
+
+        num_one, num_two = self.player.cords_map()
+        pos_port = (self.port[0] - (num_one - num_two), self.port[1])
+        if -32 < pos_port[0] < 800 and -32 < pos_port[1] < 600:
+            self.screen.blit(self.anim_port[self.ind], pos_port)
 
     def draw_stats(self):
         current_value, max_value = self.player.draw_stat()
-        center_x, center_y = 770, 563
+        center_x, center_y = 765, 563
         radius = 18
         start_angle = -math.pi / 2  # Начинаем с 90 градусов (верх)
         end_angle = start_angle + (2 * math.pi * ((current_value / max_value) * 100 / 100))
@@ -1835,11 +2690,18 @@ class Gamplay:
             points.append((x, y))
         if len(points) > 2:
             pygame.draw.polygon(self.screen, (30, 144, 255, 180), points)
-        pygame.draw.circle(screen, (40, 40, 40), (center_x, center_y), radius + 2, 2)
+        pygame.draw.circle(screen, (10, 10, 10), (center_x, center_y), radius + 2, 2)
 
         font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 12)
-        text = font.render(f'stata', True, (40, 40, 40))
-        text_r = text.get_rect(center=(770, 589))
+        text = font.render(f'recharge', True, (0, 0, 0))
+        text_r = text.get_rect(center=(765, 589))
+        self.screen.blit(text, text_r)
+
+    def draw_coin(self):
+        self.screen.blit(self.image_coin, [760, 8])
+        font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 22)
+        text = font.render(f'{self.coin}', True, (255, 255, 255))
+        text_r = text.get_rect(center=(747, 26))
         self.screen.blit(text, text_r)
 
     def draw_map(self):
@@ -1867,43 +2729,33 @@ class Gamplay:
 
     def creating_enemy(self):
         self.spis_enemy = pygame.sprite.Group()
-        anim = {
-            'run': [
-                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/run/{i}.png'), (78, 78))
-                for i in range(6)
-            ],
-            'idle': [
-                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/idle/{i}.png'), (78, 78))
-                for i in range(7)
-            ],
-            'jump': [
-                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/jump/0.png'), (78, 78))
-            ],
-            'attack': [
-                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/attack/{i}.png'),
-                                       (78, 78) if i != 2 else (100, 78)) for i in range(4)
-            ],
-            'dead': [
-                pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/dead/{i}.png'),
-                                       (78, 78) if i != 2 else (100, 78)) for i in range(5)
-            ]
-        }
-        self.spis_enemy.add(
-            self.Enemy(screen, 1120, 270, 2, 3, self.tiles, -1, 12, 50, 132, anim, 5, self.collision_with_player, 60, 1)
-        )
-        self.spis_enemy.add(
-            self.Enemy(screen, 1760, 250, 2, 3, self.tiles, -1, 12, 50, 150, anim, 5, self.collision_with_player, 60, 1)
-        )
-        self.spis_enemy.add(
-            self.Enemy(screen, 2752, 200, 2, 3, self.tiles, -1, 12, 50, 132, anim, 6, self.collision_with_player, 60, 2)
-        )
-        self.spis_enemy.add(
-            self.Enemy(screen, 3328, 384, 2, 3, self.tiles, 1, 12, 80, 200, anim, 8, self.collision_with_player, 60, 1)
-        )
 
-    def collision_with_player(self):
-        pass
-        return 1
+        number_mobs, data, damage, hp = spavn_mobs[self.name_card]
+        data_mobs = sample(data, number_mobs)
+        for i in data_mobs:
+            range_x, y, rad, rad_max, grav = i
+            x = randint(range_x[0], range_x[1])
+            self.spis_enemy.add(
+                self.Enemy(
+                    screen, x, y, randint(2, 3), self.tiles, grav, 10, rad, rad_max, animations_mob[randint(0, 1)],
+                    randint(hp[0], hp[1]), self.collision_with_player, randint(60, 80), randint(damage[0], damage[1]),
+                    self.pos_pl, self.kill_mob
+                )
+            )
+
+    def pos_pl(self):
+        return self.player.pos_player()
+
+    def kill_mob(self):
+        self.mobs += 1
+
+    def collision_with_player(self, pos_mob, dmg, reg, napr):
+        pos_pl = self.player.pos_player()
+
+        if pos_pl.colliderect(pos_mob):
+            if pos_pl[0] > pos_mob[0] and napr == 'right' or pos_pl[0] < pos_mob[0] and napr == 'left':
+                self.player.taking_damage(dmg)
+                reg()
 
     def collision_with_mobs(self):
         pos_pl = self.player.pos_player()
@@ -1917,9 +2769,13 @@ class Gamplay:
 
     def draw_enemy(self):
         num_one, num_two = self.player.cords_map()
+        pl_rect = self.player.pos_player()
         graviti_player = self.player.grvit()
         for enemy in self.spis_enemy:
-            enemy.draw(num_one, num_two, graviti_player)
+            enemy.draw(num_one, num_two, graviti_player, pl_rect)
+
+    def inf(self):
+        return self.mobs, self.time, self.coin, self.level, self.name_card
 
     def check_event(self, event) -> None:
         """
@@ -1935,23 +2791,32 @@ class Gamplay:
         """
 
         transit('settings')
+        setting_update_but()
         screen_change('gemplay', 'transition')
+
+    def teleport(self):
+        port_rect = self.anim_port[0].get_rect()
+        port_rect.x = self.port[0]
+        port_rect.y = self.port[1]
+        pl_rect = self.player.pos_player()
+        if pl_rect.colliderect(port_rect):
+            self.player.win()
 
     def load_images(self, t_s, number_cart):
         images = {
-            'A': pygame.image.load(f"images/tiles/{number_cart}_1.png").convert_alpha(),
-            'B': pygame.image.load(f"images/tiles/{number_cart}_2.png").convert_alpha(),
-            'C': pygame.image.load(f"images/tiles/{number_cart}_3.png").convert_alpha(),
-            'D': pygame.image.load(f"images/tiles/{number_cart}_4.png").convert_alpha(),
-            'E': pygame.image.load(f"images/tiles/{number_cart}_5.png").convert_alpha(),
-            'F': pygame.image.load(f"images/tiles/{number_cart}_6.png").convert_alpha(),
-            'G': pygame.image.load(f"images/tiles/{number_cart}_7.png").convert_alpha(),
-            'H': pygame.image.load(f"images/tiles/{number_cart}_8.png").convert_alpha(),
-            'I': pygame.image.load(f"images/tiles/{number_cart}_9.png").convert_alpha(),
-            'J': pygame.image.load(f"images/tiles/{number_cart}_10.png").convert_alpha(),
-            'K': pygame.image.load(f"images/tiles/{number_cart}_11.png").convert_alpha(),
-            'L': pygame.image.load(f"images/tiles/{number_cart}_12.png").convert_alpha(),
-            'M': pygame.image.load(f"images/tiles/{number_cart}_13.png").convert_alpha()
+            'A': pygame.image.load(f"images/tiles/{number_cart}/1.png").convert_alpha(),
+            'B': pygame.image.load(f"images/tiles/{number_cart}/2.png").convert_alpha(),
+            'C': pygame.image.load(f"images/tiles/{number_cart}/3.png").convert_alpha(),
+            'D': pygame.image.load(f"images/tiles/{number_cart}/4.png").convert_alpha(),
+            'E': pygame.image.load(f"images/tiles/{number_cart}/5.png").convert_alpha(),
+            'F': pygame.image.load(f"images/tiles/{number_cart}/6.png").convert_alpha(),
+            'G': pygame.image.load(f"images/tiles/{number_cart}/7.png").convert_alpha(),
+            'H': pygame.image.load(f"images/tiles/{number_cart}/8.png").convert_alpha(),
+            'I': pygame.image.load(f"images/tiles/{number_cart}/9.png").convert_alpha(),
+            'J': pygame.image.load(f"images/tiles/{number_cart}/10.png").convert_alpha(),
+            'K': pygame.image.load(f"images/tiles/{number_cart}/11.png").convert_alpha(),
+            'L': pygame.image.load(f"images/tiles/{number_cart}/12.png").convert_alpha(),
+            'M': pygame.image.load(f"images/tiles/{number_cart}/13.png").convert_alpha()
         }
 
         for key, image in images.items():
@@ -1960,18 +2825,7 @@ class Gamplay:
         return images
 
     def generate_map(self, type_card):
-        number_cart = {
-            "tundra": "1",
-            "cake": "2",
-            "choco": "3",
-            "castle": "4",
-            "dirt": "5",
-            "grass": "6",
-            "purple": "7",
-            "sand": "8",
-            "snow": "9"
-        }
-        tile_images = self.load_images(32, number_cart[type_card])
+        tile_images = self.load_images(32, type_card)
         cards = check_levels('levels', self.name_card)
         self.numb = len(cards[0]) * 32
         for y, row in enumerate(cards):
@@ -1985,6 +2839,9 @@ class Gamplay:
         custom_font = pygame.font.Font('data/Docker.ttf', 18)
         self.dis_time = custom_font.render(f'time: 00:00', True, (0, 0, 0))
         self.dis_time_rect = self.dis_time.get_rect(center=(700, 500))
+
+    def update_coin(self):
+        self.coin += 1
 
     class Tile(pygame.sprite.Sprite):
         def __init__(self, screen, image, x, y):
@@ -2001,154 +2858,248 @@ class Gamplay:
                 self.screen.blit(self.image, tile_pos)
 
     class Enemy(pygame.sprite.Sprite):
-        def __init__(self, screen, x, y, speed, health, list_tile, grav, jump, rad, max_rad, animal, hp,
-                     function_reference, delay, damage):
+        def __init__(self, screen, x, y, speed, list_tile, grav, jump, rad, max_rad, animal, hp,
+                     function_reference, delay, damage, pl_pos, func):
             super().__init__()
-            self.screen = screen
-            self.x, self.y = x, y
-            self.image = pygame.Surface((30, 30))
-            self.image.fill((0, 0, 0))
-            self.rect = self.image.get_rect(topleft=(x, y))
-            self.speed = speed
-            self.function_reference = function_reference
-            self.animal = animal
-            self.health = health
-            self.damage = damage
-            self.list_tile = list_tile
-            self.napr_right = True
-            self.persecution = False
-            self.player_pos = None
+
+            self.image = None
+
+            self.cause_damage = True
             self.expectation = True
-            self.max_rad = max_rad
-            self.img = 'right'
-            self.rad = rad
-            self.counter = 0
-            self.is_jump = 1
-            self.grav = grav
+            self.napr_right = True
+            self.fl_demage = True
+            self.fl_coin = True
             self.run = True
+
+            self.persecution = False
+            self.collision = False
             self.attack = False
             self.atak = False
-            self.count = 0
-            self.fl_demage = True
-            self.hp = hp
-            self.delay = delay
-            self.sch = 0
-            self.napr = 'right'
-            self.ind = 0
-            self.cause_damage = True
-            self.jump = jump
+            self.cn = False
+
             self.ind_dead = 0
-            self.pos = 0
+            self.counter = 0
+            self.num_1 = 0
+            self.num_2 = 0
+            self.count = 0
+            self.sch = 0
+            self.ind = 0
+            self.cnt = 0
             self.v_y = 0
 
-        def draw(self, pos_player, pos_player_display, grav_pl):
-            if (self.x - self.max_rad <= pos_player <= self.x or self.x <= pos_player <= self.x + self.max_rad) and \
-                    grav_pl == self.grav:
-                self.player_pos = pos_player
-                self.persecution = True
-            else:
-                self.expectation = True
-                self.persecution = False
-                self.player_pos = None
+            self.is_jump = 1
 
-            self.update_x()
+            self.current_animation = 'idle'
+            self.napr = 'right'
+            self.img = 'right'
+
+            self.function_reference = function_reference
+            self.coin = self.Coin(grav)
+            self.list_tile = list_tile
+            self.max_rad = max_rad
+            self.animal = animal
+            self.damage = damage
+            self.screen = screen
+            self.pl_pos = pl_pos
+            self.speed = speed
+            self.delay = delay
+            self.jump = jump
+            self.func = func
+            self.grav = grav
+            self.rad = rad
+            self.hp = hp
+            self.x = x
+            self.y = y
+
+            self.update_image()
+            self.rect = self.image.get_rect(topleft=(x, y))
+
+        def draw(self, pos_player, pos_player_display, grav_pl, pl_rect):
+            self.update_x(pos_player, grav_pl, pl_rect)
             self.update_y()
             self.update_image()
             enemy_pos = (self.rect.x - (pos_player - pos_player_display), self.rect.y)
-            if -30 < enemy_pos[0] < 800:
+            if -self.rect.width < enemy_pos[0] < 800:
                 self.screen.blit(self.image, enemy_pos)
 
-        def update_image(self):
-            self.count += 1
-            if self.count > 8:
+            if self.cn:
+                self.coin.update()
+                self.coin.draw(self.screen, pos_player - pos_player_display)
+
+        def kill(self):
+            self.cn = False
+
+        class Coin(pygame.sprite.Sprite):
+            def __init__(self, grav):
+                super().__init__()
+
+                self.kill = None
+                self.y = None
+
+                self.pod = True
+
+                self.speed = 1
                 self.count = 0
-                if self.hp > 0:
-                    if not self.atak:
+                self.ind = 0
+                self.sch = 0
+
+                self.rad = randint(50, 80)
+                self.num = randint(6, 9)
+
+                self.v_y = -self.num * grav
+                self.animal = coin_animation
+                self.image = self.animal[0]
+                self.grav = grav
+
+                self.rect = self.image.get_rect()
+
+            def update(self):
+                self.count += 1
+                if self.count > 3:
+                    self.count = 0
+                    self.ind = (self.ind + 1) % len(self.animal)
+
+                    self.image = self.animal[self.ind]
+
+                    self.v_y += self.speed * self.grav
+
+                    if self.rect.y == self.y:
+                        self.v_y = -self.num * self.grav
+
+                    self.rect.y += self.v_y
+
+                if self.sch < 120:
+                    self.sch += 1
+                else:
+                    collecting_coins(self.rect, self.kill)
+
+            def draw(self, screen, x):
+                screen.blit(self.image, [self.rect.x - x, self.rect.y])
+
+            def x_y(self, x, y, kill):
+                self.rect.x = x
+                self.rect.y = y - (self.rect.height if self.grav == 1 else 0)
+                self.y = y - (self.rect.height if self.grav == 1 else 0)
+                self.kill = kill
+
+        def update_image(self):
+            if self.hp > 0:
+                if not self.attack:
+                    self.count += 1
+                    if self.count > 5:
+                        self.count = 0
                         if self.is_jump:
-                            current_animation = 'jump'
+                            self.current_animation = 'jump'
                         elif self.run:
-                            current_animation = 'run'
+                            self.current_animation = 'run'
                         else:
-                            current_animation = 'idle'
-                    else:
-                        current_animation = 'atak'
+                            self.current_animation = 'idle'
+                        self.ind = (self.ind + 1) % len(self.animal[self.current_animation])
                 else:
-                    current_animation = 'dead'
-                    if self.ind_dead < len(self.animal['dead']):
-                        self.ind_dead += 1
-
-                if self.ind_dead == len(self.animal['dead']):
-                    self.ind = len(self.animal['dead']) - 1
-                else:
-                    self.ind = (self.ind + 1) % len(self.animal[current_animation])
-
-                if self.img == 'right':
-                    if self.grav == 1:
-                        self.image = pygame.transform.flip(self.animal[current_animation][self.ind], False, False)
+                    self.count += 1
+                    if self.count > 8:
+                        self.count = 0
+                        self.current_animation = 'attack'
+                        self.ind += 1
+                        if self.ind >= len(self.animal[self.current_animation]):
+                            self.attack = False
+                            self.cause_damage = False
+                            self.ind = 0
+            else:
+                self.count += 1
+                if self.count > 5:
+                    self.count = 0
+                    self.current_animation = 'dead'
+                    if self.ind_dead == 0:
+                        self.ind += 1
+                        if self.ind >= len(self.animal[self.current_animation]):
+                            self.ind_dead += 1
+                            self.ind = len(self.animal[self.current_animation]) - 1
                     else:
-                        self.image = pygame.transform.flip(self.animal[current_animation][self.ind], False, True)
+                        if self.fl_coin:
+                            self.coin.x_y(
+                                self.rect.x + 10, self.rect.y + (self.rect.height if self.grav == 1 else 0), self.kill
+                            )
+                            self.fl_coin = False
+                            self.func()
+                        self.ind = len(self.animal[self.current_animation]) - 1
+
+            if self.img == 'right':
+                if self.grav == 1:
+                    self.image = pygame.transform.flip(self.animal[self.current_animation][self.ind], False, False)
                 else:
-                    if self.grav == 1:
-                        self.image = pygame.transform.flip(self.animal[current_animation][self.ind], True, False)
-                    else:
-                        self.image = pygame.transform.flip(self.animal[current_animation][self.ind], True, True)
-
-        def update_x(self):
-            if not self.attack:
-                self.sch += 1
-                if self.sch > self.delay:
-                    self.sch = 0
-                    self.fl_demage = True
-
-                # if not self.is_jump and self.fl_demage:
-                #     self.count, self.ind = 0, 0
-                #     self.attack, self.fl_demage, self.cause_damage = True, False, True
-
-                if self.persecution:
-                    if not self.run:
-                        self.run = True
-                    if self.player_pos + 40 < self.rect.x:
-                        self.change_x(-self.speed)
-                        self.img = 'left'
-                    elif self.player_pos > self.rect.x:
-                        self.change_x(self.speed)
-                        self.img = 'right'
-                    else:
-                        self.attack = True
+                    self.image = pygame.transform.flip(self.animal[self.current_animation][self.ind], False, True)
+            else:
+                if self.grav == 1:
+                    self.image = pygame.transform.flip(self.animal[self.current_animation][self.ind], True, False)
                 else:
-                    if not self.expectation:
-                        print(200)
-                        self.expectation = True
-                        if self.img == 'left':
-                            self.img = 'right'
+                    self.image = pygame.transform.flip(self.animal[self.current_animation][self.ind], True, True)
+
+        def update_x(self, pos_player, grav_pl, pl_rect):
+            if self.hp > 0:
+                if not self.attack:
+                    self.sch += 1
+                    if self.sch > self.delay:
+                        self.sch = 0
+                        self.fl_demage = True
+
+                    if self.rect.colliderect(pl_rect) and self.grav == grav_pl and self.fl_demage:
+                        if pos_player < self.rect.x and self.collision:
+                            self.collision = False
+                            self.rect.x -= 5
+                        self.attack, self.fl_demage, self.cause_damage = True, False, True
+                        self.ind = 0
+                    elif self.fl_demage:
+                        self.collision = True
+                        pl_pos = self.pl_pos()
+                        if pl_pos.colliderect(pygame.Rect(self.x - self.max_rad, self.rect.y - 60, self.max_rad * 2,
+                                                          120)) and self.grav == grav_pl:
+                            self.run = True
+                            if pos_player < self.rect.x:
+                                self.napr = 'left'
+                            else:
+                                self.napr = 'right'
                         else:
-                            self.img = 'left'
-                        self.run = True
-                    else:
+                            if self.napr == 'right' and self.rect.x >= self.x + self.rad:
+                                if self.run:
+                                    self.run = False
+                                    self.num_2 = randint(60, 120)
+                                else:
+                                    self.cnt += 1
+                                    if self.cnt > self.num_2:
+                                        self.run = True
+                                        self.napr = 'left'
+                                        self.cnt = 0
+                            elif self.napr == 'left' and self.rect.x <= self.x - self.rad:
+                                if self.run:
+                                    self.run = False
+                                    self.num_1 = randint(60, 120)
+                                else:
+                                    self.cnt += 1
+                                    if self.cnt > self.num_1:
+                                        self.run = True
+                                        self.napr = 'right'
+                                        self.cnt = 0
+                            else:
+                                self.run = True
+
                         if self.run:
-                            if self.img == 'left':
-                                if self.x - self.rad - self.speed <= self.rect.x <= self.x - self.rad + self.speed:
-                                    self.run = False
-                                elif self.rect.x > self.x - self.rad + self.speed:
-                                    self.img = 'left'
-                            elif self.img == 'right':
-                                if self.x + self.rad - self.speed <= self.rect.x <= self.x + self.rad + self.speed:
-                                    self.run = False
-                                elif self.rect.x < self.x + self.rad - self.speed:
-                                    self.img = 'right'
-
-                            if self.img == 'right':
+                            if self.napr == 'right':
+                                self.img = 'right'
                                 self.change_x(self.speed)
                             else:
+                                self.img = 'left'
                                 self.change_x(-self.speed)
-                        else:
-                            self.counter += 1
-                            if self.counter == 20:
-                                self.counter = 0
-                                self.run = True
-            else:
-                if self.cause_damage:
-                    self.function_reference()
+                    else:
+                        self.run = False
+
+                else:
+                    if pos_player < self.rect.x:
+                        self.img = 'left'
+                    else:
+                        self.img = 'right'
+                    if self.cause_damage:
+                        self.function_reference(self.rect, self.damage, self.reg, self.img)
 
         def change_x(self, speed):
             old_x = self.rect.x
@@ -2177,6 +3128,9 @@ class Gamplay:
 
         def taking_damage(self, dm):
             self.hp -= dm
+            if self.hp <= 0:
+                self.ind = 0
+                self.cn = True
 
         def pos_mobs(self):
             return self.rect
@@ -2188,53 +3142,77 @@ class Gamplay:
             return self.damage
 
     class Player(pygame.sprite.Sprite):
-        def __init__(self, screen, x, y, image_folder, animation_frames, speed, jump_height, gravity, tiles,
-                     numb, hp, count, damage, function_reference, delay):
+
+        def __init__(self):
             super().__init__()
 
-            self.image_folder = image_folder  # Папка с изображениями анимации
-            self.animation_frames = animation_frames  # Словарь с кадрами анимации
+            self.change_graviti = True
+            self.cause_damage = True
+            self.is_jumping = True
+            self.smen_grav = True
+            self.fl_demage = True
+
+            self.pressing_space = False
+            self.attack = False
+            self.run = False
+
+            self.count = 6
+
+            self.grav = 1
+
             self.current_frame = 0
-            self.screen = screen
-            self.function_reference = function_reference
-            self.count = count
             self.frame_delay = 0  # Задержка между кадрами анимации
             self.frame_timer = 0  # Таймер для анимации
-            self.gravity = gravity
+            self.velocity_y = 0
+            self.ind_dead = 0
+            self.x_bac = 0
+            self.sch = 0
+
+            self.current_animation = 'idle'
+            self.direction = 'right'
+
+            self.x, self.screen, self.hp, self.max_hp, self.speed, self.tiles = None, None, None, None, None, None
+            self.gravity, self.numb, self.delay, self.jump_height, self.damage = None, None, None, None, None
+            self.animation_frames, self.function_reference, self.image, self.rect = None, None, None, None
+            self.d_x, self.name = None, None
+
+        def definition_character(self, name, screen, cords, tiles, numb, function_reference):
+
+            with open(f'data/characteristics_character/{name}.txt', 'r', encoding='utf8') as file:
+                date = list(map(int, file.read().split('\n')))
+
+            gravity = 0.5
+            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
+
+            self.animation_frames = animation_frames_character[name]
+            self.function_reference = function_reference
             self.jump_height = jump_height
+            self.gravity = gravity
+            self.damage = damage
+            self.screen = screen
+            self.delay = delay
             self.speed = speed
             self.tiles = tiles
-            self.numb = numb
-            self.x = x
-            self.delay = delay
-            self.damage = damage
-            self.x_bac = 0
-            self.velocity_y = 0
-            self.attack = False
-            self.change_graviti = True
-            self.smen_grav = True
-            self.is_jumping = True
-            self.run = False
-            self.current_animation = 'idle'
-            self.pressing_space = False
-            self.grav = 1
+            self.x = cords[0]
             self.max_hp = hp
-            self.direction = 'right'
+            self.numb = numb
+            self.name = name
+            self.d_x = 0
             self.hp = hp
-            self.ind_dead = 0
-            self.cause_damage = True
-            self.fl_demage = True
-            self.sch = 0
 
             # Инициализация изображения и rect
             self.image = pygame.transform.flip(self.animation_frames['idle'][0], False, False)
-            self.rect = self.image.get_rect(topleft=(x, y))
+            self.rect = self.image.get_rect(topleft=(cords[0], cords[1]))
+            self.rect.width = 50
 
         def draw(self):
-            self.screen.blit(self.image, (self.x, self.rect.y))
+            self.screen.blit(self.image, (self.x + self.d_x, self.rect.y))
+            pygame.draw.rect(self.screen, (0, 0, 0), (self.x, self.rect.y, 50, self.rect.height), 2)
 
         def get_current_image(self):
-            """Возвращает текущий кадр анимации с учетом направления."""
+            """
+            Возвращает текущий кадр анимации с учетом направления
+            """
 
             old = self.current_animation
             if self.hp > 0:
@@ -2301,6 +3279,9 @@ class Gamplay:
                         self.animation_frames[self.current_animation][self.current_frame],
                         True, True)
 
+            self.d_x = x_offset[self.name][self.direction][self.current_animation]
+            self.mask = pygame.mask.from_surface(self.image)
+
         def update(self):
             self.moving_x()
             self.moving_y()
@@ -2314,7 +3295,8 @@ class Gamplay:
         def grvit(self):
             return self.grav
 
-        def draw_hp(self, segment_count=10):
+        def draw_hp(self):
+            segment_count = self.max_hp
             self.hp = max(0, min(self.hp, self.max_hp))
             segments_filled = int((self.hp / self.max_hp) * segment_count)
 
@@ -2338,85 +3320,88 @@ class Gamplay:
                     pygame.draw.rect(screen, (50, 50, 50), rect, 1)
 
             font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 12)
-            text = font.render(f'hp', True, (40, 40, 40))
+            text = font.render(f'hp {self.hp}', True, (40, 40, 40))
             text_r = text.get_rect(center=(400, 566))
             self.screen.blit(text, text_r)
 
         def game_over(self):
             transit('loss')
+            res_loss()
             screen_change('gemplay', 'transition')
 
         def win(self):
-            pass
+            transit('win')
+            res_win()
+            screen_change('gemplay', 'transition')
 
         def moving_x(self):
             dx = 0
             keys = pygame.key.get_pressed()
 
-            if not self.attack:
-                if self.sch < self.delay:
-                    self.sch += 1
-                else:
-                    if not self.fl_demage:
+            if self.hp > 0:
+                if not self.attack:
+                    if self.sch < self.delay:
+                        self.sch += 1
+                    else:
                         self.fl_demage = True
 
-                if keys[pygame.K_h]:
-                    self.hp -= 1
-                    print(self.hp)
+                    if keys[pygame.K_h]:
+                        self.hp -= 1
 
-                left_button, middle_button, right_button = pygame.mouse.get_pressed()
+                    left_button, middle_button, right_button = pygame.mouse.get_pressed()
 
-                if left_button and not self.is_jumping and self.smen_grav and self.fl_demage:
-                    self.frame_delay, self.current_frame = 0, 0
-                    self.attack, self.fl_demage, self.cause_damage = True, False, True
-                    self.sch = 0
+                    if left_button and not self.is_jumping and self.smen_grav and self.fl_demage:
+                        self.frame_delay, self.current_frame = 0, 0
+                        self.attack, self.fl_demage, self.cause_damage = True, False, True
+                        self.sch = 0
 
-                if keys[pygame.K_SPACE] and not self.is_jumping and not self.pressing_space and self.velocity_y == 0:
-                    self.is_jumping, self.pressing_space = True, True
-                    self.velocity_y = -self.jump_height * self.grav
-                elif not keys[pygame.K_SPACE] and not self.is_jumping:
-                    self.pressing_space = False
+                    if keys[
+                        pygame.K_SPACE] and not self.is_jumping and not self.pressing_space and self.velocity_y == 0:
+                        self.is_jumping, self.pressing_space = True, True
+                        self.velocity_y = -self.jump_height * self.grav
+                    elif not keys[pygame.K_SPACE] and not self.is_jumping:
+                        self.pressing_space = False
 
-                if keys[pygame.K_a] and not keys[pygame.K_d]:
-                    dx -= self.speed
-                    self.run = True
-                    self.direction = 'left'
-                elif keys[pygame.K_d] and not keys[pygame.K_a]:
-                    dx += self.speed
-                    self.run = True
-                    self.direction = 'right'
-                else:
-                    self.run = False
-
-                if keys[pygame.K_w] and not self.is_jumping and self.change_graviti:
-                    self.is_jumping = True
-                    self.change_graviti = False
-                    self.grav = -self.grav
-                elif not keys[pygame.K_w] and not self.change_graviti and not self.is_jumping:
-                    self.change_graviti = True
-
-                old_x = self.rect.x
-                self.rect.x = max(min(self.rect.x + dx, self.numb), 0)
-                if pygame.sprite.spritecollide(self, self.tiles, False):
-                    self.rect.x = old_x
-                else:
-                    if self.rect.x <= 200:
-                        self.x = max(min(self.x + dx, 600), 0)
-                    elif self.rect.x >= self.numb - 200:
-                        self.x = max(min(self.x + dx, 800), 0)
+                    if keys[pygame.K_a] and not keys[pygame.K_d]:
+                        dx -= self.speed
+                        self.run = True
+                        self.direction = 'left'
+                    elif keys[pygame.K_d] and not keys[pygame.K_a]:
+                        dx += self.speed
+                        self.run = True
+                        self.direction = 'right'
                     else:
-                        if self.x + dx > 600:
-                            self.x_bac = self.x_bac - 2
-                        elif self.x + dx < 200:
-                            self.x_bac = self.x_bac + 2
-                        if self.x_bac < -800:
-                            self.x_bac = 0
-                        elif self.x_bac > 0:
-                            self.x_bac = -800
-                        self.x = max(min(self.x + dx, 600), 200)
-            else:
-                if self.cause_damage:
-                    self.function_reference()
+                        self.run = False
+
+                    if keys[pygame.K_w] and not self.is_jumping and self.change_graviti:
+                        self.is_jumping = True
+                        self.change_graviti = False
+                        self.grav = -self.grav
+                    elif not keys[pygame.K_w] and not self.change_graviti and not self.is_jumping:
+                        self.change_graviti = True
+
+                    old_x = self.rect.x
+                    self.rect.x = max(min(self.rect.x + dx, self.numb - self.rect.width), 0)
+                    if pygame.sprite.spritecollide(self, self.tiles, False):
+                        self.rect.x = old_x
+                    else:
+                        if self.rect.x <= 200:
+                            self.x = max(min(self.x + dx, 600), 0)
+                        elif self.rect.x >= self.numb - 200:
+                            self.x = max(min(self.x + dx, 800 - self.rect.width), 200)
+                        else:
+                            if self.x + dx > 600:
+                                self.x_bac = self.x_bac - 2
+                            elif self.x + dx < 200:
+                                self.x_bac = self.x_bac + 2
+                            if self.x_bac < -800:
+                                self.x_bac = 0
+                            elif self.x_bac > 0:
+                                self.x_bac = -800
+                            self.x = max(min(self.x + dx, 600), 200)
+                else:
+                    if self.cause_damage:
+                        self.function_reference()
 
         def moving_y(self):
             if not self.attack:
@@ -2436,11 +3421,17 @@ class Gamplay:
                     self.smen_grav = True
                     self.velocity_y = 0
 
-                if not (0 - 80 * 2 < self.rect.y < 600 + 80):
+                if not (0 < self.rect.y + self.rect.height and self.rect.y < 600):
+                    self.hp = 0
                     self.game_over()
 
         def cords_map(self):
             return self.rect.x, self.x
+
+        def taking_damage(self, damag):
+            self.hp -= damag
+            if self.hp >= 0:
+                self.current_frame = 0
 
         def cord_bac(self):
             return self.x_bac
@@ -2457,328 +3448,173 @@ class Gamplay:
         def reg(self):
             self.cause_damage = False
 
-    class Blave(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/attack/{i}.png'), (98, 90))
-                    for i in range(5)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/dead/{i}.png'), (90, 90))
-                    for i in range(5)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/idle/{i}.png'), (52, 90))
-                    for i in range(5)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/jump/{i}.png'), (82, 90))
-                    for i in range(9)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/run/{i}.png'), (62, 90))
-                    for i in range(8)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Блейв/jump/3.png'), (82, 90))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
 
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height, gravity,
-                             tiles, numb, hp, 6, damage, function_reference, delay)
-
-    class Zoltan(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/attack/{i}.png'), (90, 80))
-                    for i in range(10)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/dead/{i}.png'), (90, 80))
-                    for i in range(10)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/idle/{i}.png'), (90, 80))
-                    for i in range(10)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/jump/{i}.png'), (90, 80))
-                    for i in range(10)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/run/{i}.png'), (90, 80))
-                    for i in range(10)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/jump/3.png'), (90, 80))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
-
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
-                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
-
-    class Cassian(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/attack/{i}.png'), (46, 83))
-                    for i in range(10)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/dead/{i}.png'), (46, 83))
-                    for i in range(10)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/idle/{i}.png'), (46, 83))
-                    for i in range(10)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/jump/{i}.png'), (46, 83))
-                    for i in range(10)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/run/{i}.png'), (46, 83))
-                    for i in range(10)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/jump/3.png'), (46, 83))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
-
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
-                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
-
-    class Keltor(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/attack/{i}.png'), (60, 108))
-                    for i in range(5)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/dead/{i}.png'), (60, 108))
-                    for i in range(5)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/idle/{i}.png'), (60, 108))
-                    for i in range(9)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/jump/{i}.png'), (80, 108))
-                    for i in range(9)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/run/{i}.png'), (80, 108))
-                    for i in range(8)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/jump/3.png'), (80, 108))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
-
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
-                             gravity, tiles, numb, hp, 5, damage, function_reference, delay)
-
-    class Liam(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/attack/{i}.png'), (90, 105))
-                    for i in range(5)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/dead/{i}.png'), (68, 105))
-                    for i in range(6)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/idle/{i}.png'), (68, 105))
-                    for i in range(6)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/jump/{i}.png'), (68, 105))
-                    for i in range(9)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/run/{i}.png'), (68, 105))
-                    for i in range(8)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Лиам/jump/4.png'), (68, 105))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
-
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
-                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
-
-    class Ren(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/attack/{i}.png'), (100, 85))
-                    for i in range(6)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/dead/{i}.png'), (80, 85))
-                    for i in range(3)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/idle/{i}.png'), (68, 85))
-                    for i in range(6)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/jump/{i}.png'), (80, 85))
-                    for i in range(12)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/run/{i}.png'), (80, 85))
-                    for i in range(8)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Рен/jump/7.png'), (80, 85))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
-
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
-                             gravity, tiles, numb, hp, 6, damage, function_reference, delay)
-
-    class Finn(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/attack/{i}.png'), (120, 80))
-                    for i in range(10)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/dead/{i}.png'), (120, 80))
-                    for i in range(10)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/idle/{i}.png'), (120, 80))
-                    for i in range(10)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/jump/{i}.png'), (120, 80))
-                    for i in range(10)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/run/{i}.png'), (120, 80))
-                    for i in range(10)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Финн/jump/2.png'), (120, 80))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
-
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
-                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
-
-    class Aiden(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/attack/{i}.png'), (80, 80))
-                    for i in range(10)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/dead/{i}.png'), (80, 80))
-                    for i in range(10)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/idle/{i}.png'), (80, 80))
-                    for i in range(10)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/jump/{i}.png'), (80, 80))
-                    for i in range(10)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/run/{i}.png'), (80, 80))
-                    for i in range(10)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Эйден/jump/3.png'), (80, 80))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
-
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
-                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
-
-    class Eliza(Player):
-        def __init__(self, screen, cords, tiles, numb, function_reference):
-            image_folder = "image_Eloise"
-            animation_frames = {
-                'attack': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/attack/{i}.png'), (64, 80))
-                    for i in range(10)
-                ],
-                'dead': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/dead/{i}.png'), (40, 80))
-                    for i in range(10)
-                ],
-                'idle': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/idle/{i}.png'), (40, 80))
-                    for i in range(10)
-                ],
-                'jump': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/jump/{i}.png'), (48, 86))
-                    for i in range(10)
-                ],
-                'run': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/run/{i}.png'), (44, 80))
-                    for i in range(10)
-                ],
-                'smen_graviti': [
-                    pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/jump/3.png'), (44, 80))
-                ]
-            }
-            gravity = 0.5
-            date = check('characteristics', 'Блейв')
-            hp, damage, jump_height, speed, delay = date[0], date[1], date[2], date[3], date[4]
-
-            super().__init__(screen, cords[0], cords[1], image_folder, animation_frames, speed, jump_height,
-                             gravity, tiles, numb, hp, 4, damage, function_reference, delay)
-
-
-class Loss:
+class Result:
     def __init__(self, screen):
         self.screen = screen
+        self.background = pygame.image.load("images/background/background.png").convert()
 
-    def update(self):
-        pass
+        self.button1 = Button(
+            [60, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Restart', self.restart, 30
+        )
+        self.button2 = Button(
+            [540, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Menu', self.return_menu, 30
+        )
+
+        self.time, self.mobs, self.coins, self.res, self.rat, self.name_level = None, None, None, None, None, None
+        self.name_card, self.font = None, None
+        self.confetti = []
+
+    def return_menu(self):
+        start_screen()
+        music_menu()
+        screen_change('fl_zastavka', 'fl_menu')
+        transit('fl_menu')
+        screen_change('fl_menu', 'transition')
+
+    def restart(self):
+        loading()
+        transit('loading_screen')
+        screen_change('character_types', 'transition')
+
+        thread = threading.Thread(target=play_game)
+        thread.daemon = True
+        thread.start()
+
+    def draw(self):
+        self.screen.fill((0, 0, 0))
+        self.font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 36)
+
+        if self.res == 'win':
+            self.screen.blit(self.background, (0, 0))
+
+            text_surface = self.font.render('ПОБЕДА!', True, (255, 255, 0))
+            text_rect = text_surface.get_rect(center=(400, 100))
+            self.screen.blit(text_surface, text_rect)
+
+            font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 24)
+            congrats_text = font.render('Превосходно! Вы одержали победу!', True, (0, 255, 255))
+            congrats_rect = congrats_text.get_rect(center=(400, 160))
+            self.screen.blit(congrats_text, congrats_rect)
+
+            if not self.confetti:
+                self.init_confetti()
+
+            self.update_confetti()
+            self.draw_confetti()
+
+        else:
+            self.screen.blit(self.background, (0, 0))
+            text_surface = self.font.render('ПОРАЖЕНИЕ', True, (255, 0, 0))
+            text_rect = text_surface.get_rect(center=(400, 100))
+            self.screen.blit(text_surface, text_rect)
+
+            font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 20)
+            text_sur = font.render('Повезёт в следующий раз...', True, (0, 255, 255))
+            text_rct = text_sur.get_rect(center=(400, 165))
+            self.screen.blit(text_sur, text_rct)
+        if self.time < 3600:
+            time = f'{self.time // 60}сек'
+        elif self.time < 216000:
+            time = f'{self.time // 3600}мин {self.time % 3600 // 60}сек'
+        else:
+            time = f'{self.time // 216000}ч {self.time % 216000 // 3600}мин {self.time % 216000 % 3600 // 60}сек'
+        stats = [
+            f"Врагов повержено: {self.mobs}",
+            f"Время прохождения: {time}",
+            f"Монет собрано: {self.coins}" if self.res == 'win' else f"Монет потеряно: {self.coins}",
+            f"Получено рейтинга: {self.rat}"
+        ]
+        y_offset = 220
+        for stat in stats:
+            stat_surface = self.font.render(stat, True, (255, 255, 255))
+            stat_rect = stat_surface.get_rect(center=(400, y_offset))
+            self.screen.blit(stat_surface, stat_rect)
+            y_offset += 40
+
+        self.button1.draw()
+        self.button2.draw()
+
+    def check_event(self, event) -> None:
+        """
+        Метод проверки событий
+        """
+
+        self.button1.handle_event(event)
+        self.button2.handle_event(event)
+
+    def rating_calculation(self):
+        """
+        Расчёт рейтинг на основе игровой статистики
+        """
+
+        if self.res == 'loss':
+            n1, n2 = range_rating[self.name_card]['loss']
+            rating = self.mobs * 14 + self.coins * 14 + \
+                     min(int(self.time / 3600 * 100 * catering_coefficients_levels[self.name_level] *
+                             catering_coefficients_cards[self.name_card]),
+                         int(randint(n1, n2) * catering_coefficients_levels[self.name_level] *
+                             catering_coefficients_cards[self.name_card]))
+        else:
+            n1, n2 = range_rating[self.name_card]['win']
+            rating = self.mobs * 22 + self.coins * 22 + max(
+                int(randint(n1, n2) - self.time / 3600 * 10 / catering_coefficients_levels[self.name_level] /
+                    catering_coefficients_cards[self.name_card]), 0)
+
+        recording_data(rating, self.coins, self.name_card, self.res)
+        time_check(self.name_card, self.time)
+
+        return rating
+
+    def update(self, mobs, time, coins, res, name_level, name_card):
+        self.time = time
+        self.mobs = mobs
+        self.coins = coins
+        self.res = res
+        self.name_level = name_level
+        self.name_card = name_card
+        self.rat = self.rating_calculation()
+
+    def init_confetti(self):
+        """
+        Инициализация частицы конфетти
+        """
+
+        for _ in range(200):
+            x = randint(0, self.screen.get_width())
+            y = randint(0, self.screen.get_height())
+            size = randint(5, 15)
+            color = (randint(0, 255), randint(0, 255), randint(0, 255))
+            speed_x = uniform(-2, 2)  # Add horizontal movement
+            speed_y = uniform(1, 5)
+            self.confetti.append({'x': x, 'y': y, 'size': size, 'color': color, 'speed_x': speed_x, 'speed_y': speed_y})
+
+    def update_confetti(self):
+        """
+        Обновление положение частиц конфетти
+        """
+
+        for particle in self.confetti:
+            particle['x'] += particle['speed_x']
+            particle['y'] += particle['speed_y']
+
+            if particle['x'] < 0:
+                particle['x'] = self.screen.get_width()
+            elif particle['x'] > self.screen.get_width():
+                particle['x'] = 0
+
+            if particle['y'] > self.screen.get_height():
+                particle['y'] = 0
+
+    def draw_confetti(self):
+        """
+        Рисовка частиц конфетти на экране
+        """
+
+        for particle in self.confetti:
+            pygame.draw.circle(
+                self.screen, particle['color'], (int(particle['x']), int(particle['y'])), particle['size']
+            )
 
 
 def main():
@@ -2798,6 +3634,10 @@ def main():
                 main_menu.check_event(event)
             elif check('screen', 'settings'):
                 setting.check_event(event)
+            elif check('screen', 'reset_confirmation'):
+                reset_confirmation.check_event(event)
+            elif check('screen', 'results'):
+                results.check_event(event)
             elif check('screen', 'levels'):
                 levels_selection.check_event(event)
             elif check('screen', 'cards'):
@@ -2806,13 +3646,17 @@ def main():
                 card_type.check_event(event)
             elif check('screen', 'character_types'):
                 character_types.check_event(event)
+            elif check('screen', 'improvement_character'):
+                improvement_character.check_event(event)
             elif check('screen', 'info_player'):
                 pl_info.check_event(event)
             elif check('screen', 'gemplay'):
                 game.check_event(event)
+            elif check('screen', 'loss') or check('screen', 'win'):
+                res.check_event(event)
 
         if check('screen', 'fl_zastavka'):
-            if pygame.time.get_ticks() - start_time >= 9200:
+            if pygame.time.get_ticks() - start_time >= 8600:
                 screen_change('fl_zastavka', 'fl_menu')
                 music_menu()
             zastavka.draw()
@@ -2820,6 +3664,10 @@ def main():
             main_menu.draw()
         elif check('screen', 'settings'):
             setting.draw()
+        elif check('screen', 'reset_confirmation'):
+            reset_confirmation.draw()
+        elif check('screen', 'results'):
+            results.draw()
         elif check('screen', 'levels'):
             levels_selection.draw()
         elif check('screen', 'cards'):
@@ -2828,6 +3676,8 @@ def main():
             card_type.draw()
         elif check('screen', 'character_types'):
             character_types.draw()
+        elif check('screen', 'improvement_character'):
+            improvement_character.draw()
         elif check('screen', 'loading_screen'):
             loading_screen.update()
         elif check('screen', 'info_player'):
@@ -2836,8 +3686,8 @@ def main():
             transition.draw()
         elif check('screen', 'gemplay'):
             game.draw()
-        elif check('screen', 'loss'):
-            pass
+        elif check('screen', 'loss') or check('screen', 'win'):
+            res.draw()
 
         pygame.display.update()
         pygame.display.flip()
@@ -2862,6 +3712,10 @@ if __name__ == '__main__':
 
     setting = Settings(screen)
 
+    reset_confirmation = Reset_confirmation(screen)
+
+    results = Results(screen)
+
     levels_selection = Levels_Selection(screen)
 
     card_selection = Card_Selection(screen)
@@ -2870,13 +3724,15 @@ if __name__ == '__main__':
 
     character_types = Character_Types(screen)
 
+    improvement_character = Improvement_character(screen)
+
     pl_info = Playear_info(screen)
 
     loading_screen = LoadingScreen(screen)
 
     game = Gamplay(screen)
 
-    loss = Loss(screen)
+    res = Result(screen)
 
     main()
 
