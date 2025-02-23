@@ -1,8 +1,8 @@
 {
   "screen": {
     "running": true,
-    "past_position": "cards",
-    "fl_zastavka": false,
+    "past_position": "fl_zastavka",
+    "fl_zastavka": true,
     "transition": false,
     "fl_menu": false,
     "reset_confirmation": false,
@@ -10,7 +10,7 @@
     "settings": false,
     "levels": false,
     "cards": false,
-    "card_type": true,
+    "card_type": false,
     "character_types": false,
     "improvement_character": false,
     "info_player": false,
@@ -20,12 +20,12 @@
     "loss": false
   },
   "gameplay": {
-    "level": "easy",
-    "name_card": "\u0422\u0438\u0445\u0430\u044f \u0434\u043e\u043b\u0438\u043d\u0430",
+    "level": "",
+    "name_card": "",
     "type_card": "tundra",
     "character": "",
-    "rating": 21727,
-    "coins": 13,
+    "rating": 27814,
+    "coins": 30,
     "improvement_character": ""
   },
   "audio": {

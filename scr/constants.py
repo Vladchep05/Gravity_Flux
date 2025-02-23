@@ -42,7 +42,64 @@ list_tiles = [
     'snow'
 ]
 
-x_offset = {
+x_offset_mobs = {
+    0: {
+        'left': {
+            'attack': 0,
+            'jump': 0,
+            'run': 0,
+            'idle': 0,
+            'dead': 0,
+            'smen_graviti': 0
+        },
+        'right': {
+            'attack': 0,
+            'jump': 0,
+            'run': 0,
+            'idle': 0,
+            'dead': 0,
+            'smen_graviti': 0
+        }
+    },
+    1: {
+        'left': {
+            'attack': -48,
+            'jump': -48,
+            'run': -48,
+            'idle': -48,
+            'dead': -48,
+            'smen_graviti': -48
+        },
+        'right': {
+            'attack': -20,
+            'jump': -20,
+            'run': -20,
+            'idle': -20,
+            'dead': -20,
+            'smen_graviti': -20
+        }
+    },
+    2: {
+        'left': {
+            'attack': 0,
+            'jump': 0,
+            'run': 0,
+            'idle': 0,
+            'dead': 0,
+            'smen_graviti': 0
+        },
+        'right': {
+            'attack': 0,
+            'jump': 0,
+            'run': 0,
+            'idle': 0,
+            'dead': 0,
+            'smen_graviti': 0
+        }
+    }
+}
+
+x_offset_characters = {
     'Блейв': {
         'left': {
             'attack': -24,
@@ -54,12 +111,12 @@ x_offset = {
         },
         'right': {
             'attack': -24,
-            'jump': -20,
+            'jump': -10,
             'run': -15,
             'idle': 0,
             'dead': -19,
             'smen_graviti': 0
-        },
+        }
     },
     'Элиза': {
         'left': {
@@ -77,7 +134,7 @@ x_offset = {
             'idle': 0,
             'dead': 0,
             'smen_graviti': 0
-        },
+        }
     },
     'Кассиан': {
         'left': {
@@ -85,7 +142,7 @@ x_offset = {
             'jump': -10,
             'run': -10,
             'idle': -10,
-            'dead': -10,
+            'dead': -24,
             'smen_graviti': -10
         },
         'right': {
@@ -95,115 +152,115 @@ x_offset = {
             'idle': 0,
             'dead': 0,
             'smen_graviti': 0
-        },
+        }
     },
     'Рен': {
         'left': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -44,
+            'jump': -15,
+            'run': -15,
+            'idle': -9,
+            'dead': -15,
+            'smen_graviti': -15
         },
         'right': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
-        },
+            'attack': -10,
+            'jump': -15,
+            'run': -15,
+            'idle': -9,
+            'dead': -15,
+            'smen_graviti': -15
+        }
     },
     'Келтор': {
         'left': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -30,
+            'jump': -20,
+            'run': -35,
+            'idle': -9,
+            'dead': -25,
+            'smen_graviti': -20
         },
         'right': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
-        },
+            'attack': -25,
+            'jump': -30,
+            'run': -15,
+            'idle': -9,
+            'dead': -25,
+            'smen_graviti': -30
+        }
     },
     'Золтан': {
         'left': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -34,
+            'jump': -34,
+            'run': -34,
+            'idle': -34,
+            'dead': -34,
+            'smen_graviti': -34
         },
         'right': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
-        },
+            'attack': -6,
+            'jump': -6,
+            'run': -6,
+            'idle': -6,
+            'dead': -6,
+            'smen_graviti': -6
+        }
     },
     'Финн': {
         'left': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
+            'attack': -45,
+            'jump': -45,
+            'run': -45,
+            'idle': -45,
             'dead': 0,
-            'smen_graviti': 0
+            'smen_graviti': -45
         },
         'right': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
+            'attack': -5,
+            'jump': -5,
+            'run': -5,
+            'idle': -5,
             'dead': 0,
-            'smen_graviti': 0
-        },
+            'smen_graviti': -5
+        }
     },
     'Лиам': {
         'left': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -29,
+            'jump': -9,
+            'run': -9,
+            'idle': -9,
+            'dead': -9,
+            'smen_graviti': -9
         },
         'right': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
-        },
+            'attack': -9,
+            'jump': -9,
+            'run': -9,
+            'idle': -9,
+            'dead': -9,
+            'smen_graviti': -9
+        }
     },
     'Эйден': {
         'left': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -25,
+            'jump': -25,
+            'run': -25,
+            'idle': -25,
+            'dead': -25,
+            'smen_graviti': -25
         },
         'right': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
-        },
+            'attack': -5,
+            'jump': -5,
+            'run': -5,
+            'idle': -5,
+            'dead': -5,
+            'smen_graviti': -5
+        }
     },
 }
 
@@ -649,7 +706,7 @@ spavn_mobs = {
                                 [5888, 5894], 295, 92, 193, -1
                             ],
                             [
-                                [6784, 673], 295, 86, 212, -1
+                                [6784, 6880], 295, 86, 212, -1
                             ],
                             [
                                 [7008, 7040], 295, 76, 156, 1
@@ -973,27 +1030,27 @@ animation_frames_character = {
     },
     'Золтан': {
         'attack': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/attack/{i}.png'), (90, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/attack/{i}.png'), (90, 82))
             for i in range(10)
         ],
         'dead': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/dead/{i}.png'), (90, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/dead/{i}.png'), (90, 82))
             for i in range(10)
         ],
         'idle': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/idle/{i}.png'), (90, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/idle/{i}.png'), (90, 82))
             for i in range(10)
         ],
         'jump': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/jump/{i}.png'), (90, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/jump/{i}.png'), (90, 82))
             for i in range(10)
         ],
         'run': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/run/{i}.png'), (90, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/run/{i}.png'), (90, 82))
             for i in range(10)
         ],
         'smen_graviti': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/jump/3.png'), (90, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Золтан/jump/3.png'), (90, 82))
         ]
     },
     'Кассиан': {
@@ -1002,7 +1059,7 @@ animation_frames_character = {
             for i in range(10)
         ],
         'dead': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/dead/{i}.png'), (60, 83))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Кассиан/dead/{i}.png'), (74, 83))
             for i in range(10)
         ],
         'idle': [
@@ -1023,27 +1080,27 @@ animation_frames_character = {
     },
     'Келтор': {
         'attack': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/attack/{i}.png'), (60, 108))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/attack/{i}.png'), (110, 108))
             for i in range(5)
         ],
         'dead': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/dead/{i}.png'), (60, 108))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/dead/{i}.png'), (100, 108))
             for i in range(5)
         ],
         'idle': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/idle/{i}.png'), (60, 108))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/idle/{i}.png'), (68, 108))
             for i in range(9)
         ],
         'jump': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/jump/{i}.png'), (80, 108))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/jump/{i}.png'), (100, 108))
             for i in range(9)
         ],
         'run': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/run/{i}.png'), (80, 108))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/run/{i}.png'), (100, 108))
             for i in range(8)
         ],
         'smen_graviti': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/jump/3.png'), (80, 108))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Келтор/jump/3.png'), (100, 108))
         ]
     },
     'Лиам': {
@@ -1073,7 +1130,7 @@ animation_frames_character = {
     },
     'Рен': {
         'attack': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Рен/attack/{i}.png'), (100, 85))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Рен/attack/{i}.png'), (104, 85))
             for i in range(6)
         ],
         'dead': [
@@ -1098,27 +1155,27 @@ animation_frames_character = {
     },
     'Финн': {
         'attack': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/attack/{i}.png'), (120, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/attack/{i}.png'), (100, 80))
             for i in range(10)
         ],
         'dead': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/dead/{i}.png'), (120, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/dead/{i}.png'), (100, 80))
             for i in range(10)
         ],
         'idle': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/idle/{i}.png'), (120, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/idle/{i}.png'), (100, 80))
             for i in range(10)
         ],
         'jump': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/jump/{i}.png'), (120, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/jump/{i}.png'), (100, 80))
             for i in range(10)
         ],
         'run': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/run/{i}.png'), (120, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/run/{i}.png'), (100, 80))
             for i in range(10)
         ],
         'smen_graviti': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/jump/2.png'), (120, 80))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Финн/jump/2.png'), (100, 80))
         ]
     },
     'Эйден': {
@@ -1160,7 +1217,7 @@ animation_frames_character = {
             for i in range(10)
         ],
         'jump': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/jump/{i}.png'), (50, 90))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/jump/{i}.png'), (50, 82))
             for i in range(10)
         ],
         'run': [
@@ -1168,7 +1225,7 @@ animation_frames_character = {
             for i in range(10)
         ],
         'smen_graviti': [
-            pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/jump/3.png'), (50, 90))
+            pygame.transform.scale(pygame.image.load(f'images/characters/Элиза/jump/3.png'), (50, 82))
         ]
     }
 }
@@ -1197,23 +1254,23 @@ animations_mob = {
     },
     1: {
         'run': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/run/{i}.png'), (78, 85)) for i in
-            range(6)
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/run/{i}.png'), (108, 82))
+            for i in range(6)
         ],
         'idle': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/idle/{i}.png'), (78, 85))
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/idle/{i}.png'), (108, 82))
             for i in range(7)
         ],
         'jump': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/jump/0.png'), (78, 85))
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/jump/0.png'), (108, 82))
         ],
         'attack': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/attack/{i}.png'),
-                                   (78, 85)) for i in range(4)
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/attack/{i}.png'), (108, 82))
+            for i in range(4)
         ],
         'dead': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/dead/{i}.png'),
-                                   (78, 85)) for i in range(5)
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/dead/{i}.png'), (108, 82))
+            for i in range(5)
         ]
     }
 }

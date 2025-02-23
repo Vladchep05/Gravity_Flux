@@ -9,7 +9,7 @@ from scr.constants import (rating_cost, belonging_to_level, portal_cords, spawn_
                            catering_coefficients_levels, catering_coefficients_cards, opening_levels, range_rating,
                            map_index, level_map, rating_character, list_name_card, spavn_mobs, list_tiles,
                            animation_frames_character, animations_mob, coin_animation, maximum_improvement,
-                           character_level, level_improvement, x_offset)
+                           character_level, level_improvement, x_offset_characters, x_offset_mobs)
 
 import pygame
 
@@ -235,13 +235,6 @@ def player_inform(name):
 
 def update_improvement(name):
     improvement_character.update_button(name)
-
-
-def collecting_coins(coin_pos, kill):
-    pl_pos = game.player.rect
-    if pl_pos.colliderect(coin_pos):
-        game.update_coin()
-        kill()
 
 
 def res_loss():
@@ -2735,11 +2728,12 @@ class Gamplay:
         for i in data_mobs:
             range_x, y, rad, rad_max, grav = i
             x = randint(range_x[0], range_x[1])
+            name = randint(0, 1)
             self.spis_enemy.add(
                 self.Enemy(
-                    screen, x, y, randint(2, 3), self.tiles, grav, 10, rad, rad_max, animations_mob[randint(0, 1)],
+                    screen, x, y, randint(2, 3), self.tiles, grav, 10, rad, rad_max, animations_mob[name],
                     randint(hp[0], hp[1]), self.collision_with_player, randint(60, 80), randint(damage[0], damage[1]),
-                    self.pos_pl, self.kill_mob
+                    self.pos_pl, self.kill_mob, name, self.collecting_coins
                 )
             )
 
@@ -2749,23 +2743,30 @@ class Gamplay:
     def kill_mob(self):
         self.mobs += 1
 
-    def collision_with_player(self, pos_mob, dmg, reg, napr):
+    def collision_with_player(self, self_mob, pos_mob, dmg, reg, napr):
         pos_pl = self.player.pos_player()
+        self.player.gen_mask()
+        self_mob.gen_mask()
 
-        if pos_pl.colliderect(pos_mob):
-            if pos_pl[0] > pos_mob[0] and napr == 'right' or pos_pl[0] < pos_mob[0] and napr == 'left':
+        if pygame.sprite.collide_mask(self.player, self_mob):
+            if (pos_pl[0] > pos_mob[0] and napr == 'right') or (pos_pl[0] < pos_mob[0] and napr == 'left'):
                 self.player.taking_damage(dmg)
                 reg()
 
     def collision_with_mobs(self):
         pos_pl = self.player.pos_player()
-        if mob := pygame.sprite.spritecollide(self.player, self.spis_enemy, False):
-            pos_mob = mob[0].pos_mobs()
+        self.player.gen_mask()
 
-            if pos_pl[0] > pos_mob[0] and self.player.direct() == 'left' or \
-                    pos_pl[0] < pos_mob[0] and self.player.direct() == 'right':
-                mob[0].taking_damage(self.player.dm())
-                self.player.reg()
+        for enemy in self.spis_enemy:
+            enemy.gen_mask()
+
+            if pygame.sprite.collide_mask(self.player, enemy):
+                pos_mob = enemy.pos_mobs()
+                if (pos_pl[0] > pos_mob[0] and self.player.direct() == 'left') or (
+                        pos_pl[0] < pos_mob[0] and self.player.direct() == 'right'):
+                    enemy.taking_damage(self.player.dm())
+                    self.player.reg()
+                    break
 
     def draw_enemy(self):
         num_one, num_two = self.player.cords_map()
@@ -2843,6 +2844,12 @@ class Gamplay:
     def update_coin(self):
         self.coin += 1
 
+    def collecting_coins(self, coin_pos, kill):
+        pl_pos = self.player.pos_player()
+        if pl_pos.colliderect(coin_pos):
+            self.update_coin()
+            kill()
+
     class Tile(pygame.sprite.Sprite):
         def __init__(self, screen, image, x, y):
             super().__init__()
@@ -2859,10 +2866,11 @@ class Gamplay:
 
     class Enemy(pygame.sprite.Sprite):
         def __init__(self, screen, x, y, speed, list_tile, grav, jump, rad, max_rad, animal, hp,
-                     function_reference, delay, damage, pl_pos, func):
+                     function_reference, delay, damage, pl_pos, func, name, collecting_coins):
             super().__init__()
 
             self.image = None
+            self.mask = None
 
             self.cause_damage = True
             self.expectation = True
@@ -2882,6 +2890,8 @@ class Gamplay:
             self.num_1 = 0
             self.num_2 = 0
             self.count = 0
+            self.d_x = 0
+            self.d_y = 0
             self.sch = 0
             self.ind = 0
             self.cnt = 0
@@ -2894,7 +2904,7 @@ class Gamplay:
             self.img = 'right'
 
             self.function_reference = function_reference
-            self.coin = self.Coin(grav)
+            self.coin = self.Coin(grav, collecting_coins)
             self.list_tile = list_tile
             self.max_rad = max_rad
             self.animal = animal
@@ -2906,6 +2916,7 @@ class Gamplay:
             self.jump = jump
             self.func = func
             self.grav = grav
+            self.name = name
             self.rad = rad
             self.hp = hp
             self.x = x
@@ -2913,14 +2924,25 @@ class Gamplay:
 
             self.update_image()
             self.rect = self.image.get_rect(topleft=(x, y))
+            self.rect.width = 40
+            if name == 0:
+                self.d_y = 12
+                self.rect.height = 70
+            elif name == 1:
+                self.d_y = 12
+                self.rect.height = 70
 
         def draw(self, pos_player, pos_player_display, grav_pl, pl_rect):
             self.update_x(pos_player, grav_pl, pl_rect)
             self.update_y()
             self.update_image()
-            enemy_pos = (self.rect.x - (pos_player - pos_player_display), self.rect.y)
+            enemy_pos = (self.rect.x - (pos_player - pos_player_display) + self.d_x,
+                         self.rect.y - (self.d_y if self.grav == 1 else 0))
             if -self.rect.width < enemy_pos[0] < 800:
                 self.screen.blit(self.image, enemy_pos)
+
+            pygame.draw.rect(self.screen, (0, 0, 0), (
+                self.rect.x - (pos_player - pos_player_display), self.rect.y, self.rect.width, self.rect.height), 1)
 
             if self.cn:
                 self.coin.update()
@@ -2930,7 +2952,7 @@ class Gamplay:
             self.cn = False
 
         class Coin(pygame.sprite.Sprite):
-            def __init__(self, grav):
+            def __init__(self, grav, collecting_coins):
                 super().__init__()
 
                 self.kill = None
@@ -2946,6 +2968,7 @@ class Gamplay:
                 self.rad = randint(50, 80)
                 self.num = randint(6, 9)
 
+                self.collecting_coins = collecting_coins
                 self.v_y = -self.num * grav
                 self.animal = coin_animation
                 self.image = self.animal[0]
@@ -2971,7 +2994,7 @@ class Gamplay:
                 if self.sch < 120:
                     self.sch += 1
                 else:
-                    collecting_coins(self.rect, self.kill)
+                    self.collecting_coins(self.rect, self.kill)
 
             def draw(self, screen, x):
                 screen.blit(self.image, [self.rect.x - x, self.rect.y])
@@ -3034,6 +3057,8 @@ class Gamplay:
                     self.image = pygame.transform.flip(self.animal[self.current_animation][self.ind], True, False)
                 else:
                     self.image = pygame.transform.flip(self.animal[self.current_animation][self.ind], True, True)
+
+            self.d_x = x_offset_mobs[self.name][self.img][self.current_animation]
 
         def update_x(self, pos_player, grav_pl, pl_rect):
             if self.hp > 0:
@@ -3099,7 +3124,7 @@ class Gamplay:
                     else:
                         self.img = 'right'
                     if self.cause_damage:
-                        self.function_reference(self.rect, self.damage, self.reg, self.img)
+                        self.function_reference(self, self.rect, self.damage, self.reg, self.img)
 
         def change_x(self, speed):
             old_x = self.rect.x
@@ -3126,11 +3151,15 @@ class Gamplay:
 
                     self.v_y = 0
 
+        def gen_mask(self):
+            self.mask = pygame.mask.from_surface(self.image)
+
         def taking_damage(self, dm):
-            self.hp -= dm
-            if self.hp <= 0:
-                self.ind = 0
-                self.cn = True
+            if self.hp > 0:
+                self.hp -= dm
+                if self.hp <= 0:
+                    self.ind = 0
+                    self.cn = True
 
         def pos_mobs(self):
             return self.rect
@@ -3174,7 +3203,7 @@ class Gamplay:
             self.x, self.screen, self.hp, self.max_hp, self.speed, self.tiles = None, None, None, None, None, None
             self.gravity, self.numb, self.delay, self.jump_height, self.damage = None, None, None, None, None
             self.animation_frames, self.function_reference, self.image, self.rect = None, None, None, None
-            self.d_x, self.name = None, None
+            self.d_x, self.name, self.mask = None, None, None
 
         def definition_character(self, name, screen, cords, tiles, numb, function_reference):
 
@@ -3197,16 +3226,31 @@ class Gamplay:
             self.max_hp = hp
             self.numb = numb
             self.name = name
-            self.d_x = 0
             self.hp = hp
+            self.d_x = 0
+            self.d_y = 0
 
             # Инициализация изображения и rect
             self.image = pygame.transform.flip(self.animation_frames['idle'][0], False, False)
             self.rect = self.image.get_rect(topleft=(cords[0], cords[1]))
+
+            if self.name == 'Лиам':
+                self.rect.height = 80
+                self.d_y = 25
+            elif self.name == 'Келтор':
+                self.rect.height = 80
+                self.d_y = 28
+            elif self.name == 'Золтан':
+                self.rect.height = 80
+                self.d_y = 2
+            elif self.name == 'Финн':
+                self.rect.height = 75
+                self.d_y = 5
+
             self.rect.width = 50
 
         def draw(self):
-            self.screen.blit(self.image, (self.x + self.d_x, self.rect.y))
+            self.screen.blit(self.image, (self.x + self.d_x, self.rect.y - (self.d_y if self.grav == 1 else 0)))
             pygame.draw.rect(self.screen, (0, 0, 0), (self.x, self.rect.y, 50, self.rect.height), 2)
 
         def get_current_image(self):
@@ -3238,6 +3282,9 @@ class Gamplay:
                         self.current_frame = 0
                 else:
                     self.current_animation = 'attack'
+                    if old != self.current_animation:
+                        self.frame_delay = 0
+                        self.current_frame = 0
                     self.frame_delay += 1
                     if self.frame_delay > self.count:
                         self.frame_delay = 0
@@ -3247,18 +3294,15 @@ class Gamplay:
                             self.current_frame = 0
             else:
                 self.frame_delay += 1
-                if self.frame_delay > self.count + 2:
+                if self.frame_delay > self.count + 1:
                     self.frame_delay = 0
                     self.current_animation = 'dead'
+                    self.ind_dead += 1
                     if self.ind_dead < len(self.animation_frames['dead']):
-                        self.ind_dead += 1
-
-                    if self.ind_dead == len(self.animation_frames['dead']):
-                        self.current_frame = len(self.animation_frames[self.current_animation]) - 1
+                        self.current_frame += 1
+                    elif self.ind_dead == len(self.animation_frames['dead']):
+                        self.current_frame = len(self.animation_frames['dead']) - 1
                         self.game_over()
-                    else:
-                        self.current_frame = (self.current_frame + 1) % len(
-                            self.animation_frames[self.current_animation])
 
             if self.direction == 'right':
                 if self.grav == 1:
@@ -3279,7 +3323,7 @@ class Gamplay:
                         self.animation_frames[self.current_animation][self.current_frame],
                         True, True)
 
-            self.d_x = x_offset[self.name][self.direction][self.current_animation]
+            self.d_x = x_offset_characters[self.name][self.direction][self.current_animation]
             self.mask = pygame.mask.from_surface(self.image)
 
         def update(self):
@@ -3294,6 +3338,9 @@ class Gamplay:
 
         def grvit(self):
             return self.grav
+
+        def gen_mask(self):
+            self.mask = pygame.mask.from_surface(self.image)
 
         def draw_hp(self):
             segment_count = self.max_hp
@@ -3429,9 +3476,10 @@ class Gamplay:
             return self.rect.x, self.x
 
         def taking_damage(self, damag):
-            self.hp -= damag
-            if self.hp >= 0:
-                self.current_frame = 0
+            if self.hp > 0:
+                self.hp -= damag
+                if self.hp <= 0:
+                    self.current_frame = 0
 
         def cord_bac(self):
             return self.x_bac
