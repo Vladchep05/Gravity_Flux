@@ -2728,7 +2728,7 @@ class Gamplay:
         for i in data_mobs:
             range_x, y, rad, rad_max, grav = i
             x = randint(range_x[0], range_x[1])
-            name = randint(0, 1)
+            name = randint(0, 2)
             self.spis_enemy.add(
                 self.Enemy(
                     screen, x, y, randint(2, 3), self.tiles, grav, 10, rad, rad_max, animations_mob[name],
@@ -2926,11 +2926,17 @@ class Gamplay:
             self.rect = self.image.get_rect(topleft=(x, y))
             self.rect.width = 40
             if name == 0:
-                self.d_y = 12
+                self.d_y = 20
                 self.rect.height = 70
+                self.frame_counter = 3
             elif name == 1:
                 self.d_y = 12
                 self.rect.height = 70
+                self.frame_counter = 5
+            elif name == 2:
+                self.d_y = 20
+                self.rect.height = 70
+                self.frame_counter = 4
 
         def draw(self, pos_player, pos_player_display, grav_pl, pl_rect):
             self.update_x(pos_player, grav_pl, pl_rect)
@@ -3020,7 +3026,7 @@ class Gamplay:
                         self.ind = (self.ind + 1) % len(self.animal[self.current_animation])
                 else:
                     self.count += 1
-                    if self.count > 8:
+                    if self.count > self.frame_counter:
                         self.count = 0
                         self.current_animation = 'attack'
                         self.ind += 1

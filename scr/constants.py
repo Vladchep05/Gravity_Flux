@@ -45,20 +45,20 @@ list_tiles = [
 x_offset_mobs = {
     0: {
         'left': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -44,
+            'jump': -44,
+            'run': -44,
+            'idle': -44,
+            'dead': -44,
+            'smen_graviti': -44
         },
         'right': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -44,
+            'jump': -44,
+            'run': -44,
+            'idle': -44,
+            'dead': -44,
+            'smen_graviti': -44
         }
     },
     1: {
@@ -81,20 +81,20 @@ x_offset_mobs = {
     },
     2: {
         'left': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -44,
+            'jump': -44,
+            'run': -44,
+            'idle': -48,
+            'dead': -44,
+            'smen_graviti': -44
         },
         'right': {
-            'attack': 0,
-            'jump': 0,
-            'run': 0,
-            'idle': 0,
-            'dead': 0,
-            'smen_graviti': 0
+            'attack': -44,
+            'jump': -44,
+            'run': -44,
+            'idle': -40,
+            'dead': -44,
+            'smen_graviti': -44
         }
     }
 }
@@ -1233,23 +1233,23 @@ animation_frames_character = {
 animations_mob = {
     0: {
         'run': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/run/{i}.png'), (78, 78)) for i in
-            range(6)
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/run/{i}.png'), (128, 90))
+            for i in range(8)
         ],
         'idle': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/idle/{i}.png'), (78, 78))
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/idle/{i}.png'), (128, 90))
             for i in range(7)
         ],
         'jump': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/jump/0.png'), (78, 78))
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/jump/0.png'), (128, 90))
         ],
         'attack': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/attack/{i}.png'),
-                                   (78, 78) if i != 2 else (85, 78)) for i in range(4)
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/attack/{i}.png'), (128, 90))
+            for i in range(15)
         ],
         'dead': [
-            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/dead/{i}.png'),
-                                   (78, 78) if i != 2 else (85, 78)) for i in range(4)
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_0/dead/{i}.png'), (128, 90))
+            for i in range(4)
         ]
     },
     1: {
@@ -1266,10 +1266,31 @@ animations_mob = {
         ],
         'attack': [
             pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/attack/{i}.png'), (108, 82))
-            for i in range(4)
+            for i in range(8)
         ],
         'dead': [
             pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_1/dead/{i}.png'), (108, 82))
+            for i in range(5)
+        ]
+    },
+    2: {
+        'run': [
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_2/run/{i}.png'), (128, 90))
+            for i in range(8)
+        ],
+        'idle': [
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_2/idle/{i}.png'), (128, 90))
+            for i in range(7)
+        ],
+        'jump': [
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_2/jump/0.png'), (128, 90))
+        ],
+        'attack': [
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_2/attack/{i}.png'), (128, 90))
+            for i in range(12)
+        ],
+        'dead': [
+            pygame.transform.scale(pygame.image.load(f'images/mobs/skelet_2/dead/{i}.png'), (128, 90))
             for i in range(5)
         ]
     }
