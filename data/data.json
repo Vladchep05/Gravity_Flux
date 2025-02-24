@@ -24,15 +24,15 @@
     "name_card": "",
     "type_card": "tundra",
     "character": "",
-    "rating": 29411,
-    "coins": 34,
+    "rating": 20891,
+    "coins": 4,
     "improvement_character": ""
   },
   "audio": {
     "music_volume": 0.6,
     "sound_volume": 0.6,
-    "mute_music": false,
-    "mute_sound": false
+    "mute_music": true,
+    "mute_sound": true
   },
   "open_characters": {
     "\u0411\u043b\u0435\u0439\u0432": true,

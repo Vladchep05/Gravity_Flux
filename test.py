@@ -1,1 +1,1 @@
-print(len('                                                                FMMMMMMMME  GBBBBBH                                                               GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBH        '))
+print('1234'[:-2])

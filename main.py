@@ -5,11 +5,12 @@ import threading
 import datetime
 from random import randint, random, uniform, sample
 
-from scr.constants import (rating_cost, belonging_to_level, portal_cords, spawn_coordinates, type_card_background,
-                           catering_coefficients_levels, catering_coefficients_cards, opening_levels, range_rating,
-                           map_index, level_map, rating_character, list_name_card, spavn_mobs, list_tiles,
-                           animation_frames_character, animations_mob, coin_animation, maximum_improvement,
-                           character_level, level_improvement, x_offset_characters, x_offset_mobs)
+from scr.constants import (
+    rating_cost, belonging_to_level, portal_cords, spawn_coordinates, type_card_background, maximum_improvement,
+    catering_coefficients_levels, catering_coefficients_cards, opening_levels, range_rating, map_index, level_map,
+    rating_character, list_name_card, spavn_mobs, list_tiles, animation_frames_character, animations_mob,
+    coin_animation, character_level, level_improvement, x_offset_characters, x_offset_mobs
+)
 
 import pygame
 
@@ -94,8 +95,11 @@ def card_selection_easy() -> None:
     setting_value('level', 'easy')
     character_types.creating_buttons('Блейв', 'Элиза', 'Кассиан')
     card_selection.creating_buttons(*level_map['easy'])
+
     transit('cards')
     screen_change('levels', 'transition')
+
+    levels_selection.creating_buttons()
 
 
 def card_selection_normal() -> None:
@@ -106,8 +110,11 @@ def card_selection_normal() -> None:
     setting_value('level', 'normal')
     character_types.creating_buttons('Рен', 'Келтор', 'Золтан')
     card_selection.creating_buttons(*level_map['normal'])
+
     transit('cards')
     screen_change('levels', 'transition')
+
+    levels_selection.creating_buttons()
 
 
 def card_selection_hard() -> None:
@@ -118,8 +125,11 @@ def card_selection_hard() -> None:
     setting_value('level', 'hard')
     character_types.creating_buttons('Финн', 'Лиам', 'Эйден')
     card_selection.creating_buttons(*level_map['hard'])
+
     transit('cards')
     screen_change('levels', 'transition')
+
+    levels_selection.creating_buttons()
 
 
 def play_game():
@@ -894,8 +904,8 @@ class Levels_Selection:
         """
 
         transit('settings')
-        setting_update_but()
         screen_change('levels', 'transition')
+        self.creating_buttons()
 
     def closing_window(self) -> None:
         """
@@ -1061,8 +1071,10 @@ class Card_Selection:
         """
 
         transit('card_type')
-        card_type_update_but()
         screen_change('cards', 'transition')
+
+        # Обновление кнопок
+        self.creating_buttons(self.card_1, self.card_2, self.card_3)
 
     def open_setting(self) -> None:
         """
@@ -1071,7 +1083,9 @@ class Card_Selection:
 
         transit('settings')
         screen_change('cards', 'transition')
-        self.update_botton()
+
+        # Обновление кнопок
+        self.creating_buttons(self.card_1, self.card_2, self.card_3)
 
     def closing_window(self) -> None:
         """
@@ -1081,7 +1095,9 @@ class Card_Selection:
         setting_value('name_card', '')
         transit('levels')
         screen_change('cards', 'transition')
-        self.update_botton()
+
+        # Обновление кнопок
+        self.creating_buttons(self.card_1, self.card_2, self.card_3)
 
     def draw(self) -> None:
         """
@@ -1227,6 +1243,7 @@ class Card_Type:
         self.background = pygame.transform.scale(pygame.image.load('images/background/background.png'), (800, 600))
 
         self.buttons = []
+        self.update_button()
 
         # Создание изображений
         self.images = []
@@ -1391,8 +1408,9 @@ class Card_Type:
         """
 
         transit('character_types')
-        character_update_but()
         screen_change('card_type', 'transition')
+
+        # Обновление кнопок
         self.update_button()
 
     def open_setting(self) -> None:
@@ -1402,6 +1420,8 @@ class Card_Type:
 
         transit('settings')
         screen_change('card_type', 'transition')
+
+        # Обновление кнопок
         self.update_button()
 
     def closing_window(self) -> None:
@@ -1412,6 +1432,8 @@ class Card_Type:
         setting_value('type_card', '')
         transit('cards')
         screen_change('card_type', 'transition')
+
+        # Обновление кнопок
         self.update_button()
 
     def draw(self) -> None:
@@ -1591,9 +1613,10 @@ class Character_Types:
 
         transit('settings')
         screen_change('character_types', 'transition')
+
         self.update_button()
 
-    def play_game(self):
+    def play_game(self) -> None:
         """
         Запуск загрузки
         """
@@ -1606,28 +1629,32 @@ class Character_Types:
         thread.daemon = True
         thread.start()
 
+        # Обновление кнопок
+        self.rollback()
+
     def closing_window(self) -> None:
         """
         Метод закрытия окна выбора персонажа
         """
 
-        self.start = False
         setting_value('character', '')
         transit('card_type')
         screen_change('character_types', 'transition')
+
+        self.start = False
         self.rollback()
 
-    def open_win_info_pl_one(self):
+    def open_info_pl_one(self) -> None:
         player_inform(self.name1)
         transit('info_player')
         screen_change('character_types', 'transition')
 
-    def open_win_info_pl_two(self):
+    def open_info_pl_two(self) -> None:
         player_inform(self.name2)
         transit('info_player')
         screen_change('character_types', 'transition')
 
-    def open_win_info_pl_three(self):
+    def open_info_pl_three(self) -> None:
         player_inform(self.name3)
         transit('info_player')
         screen_change('character_types', 'transition')
@@ -1684,6 +1711,9 @@ class Character_Types:
         self.name2 = name2
         self.name3 = name3
 
+        self.rollback()
+
+    def rollback(self) -> None:
         # Создание кнопок
         self.buttons = []
 
@@ -1710,48 +1740,24 @@ class Character_Types:
 
         # Создание изображений персонажей
         self.pl_image = []
+
         self.pl_image.append(
-            pygame.image.load(f'images/players/{self.chek_open_pl_img(name1)}.png').convert_alpha()
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(self.name1)}.png').convert_alpha()
         )
         self.pl_image.append(
-            pygame.image.load(f'images/players/{self.chek_open_pl_img(name2)}.png').convert_alpha()
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(self.name2)}.png').convert_alpha()
         )
         self.pl_image.append(
-            pygame.image.load(f'images/players/{self.chek_open_pl_img(name3)}.png').convert_alpha()
+            pygame.image.load(f'images/players/{self.chek_open_pl_img(self.name3)}.png').convert_alpha()
         )
 
         self.start = False
         self.fl = False
         self.count = 0
 
-    def rollback(self):
-        # Создание кнопок
-        self.buttons = []
-
-        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name1)
-        self.buttons.append(
-            ImageButton(
-                [40, 420, 240, 50], screen, img_one, img_two, self.player_one, scale=k1, hover_scale=k2
-            )
-        )
-
-        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name2)
-        self.buttons.append(
-            ImageButton(
-                [290, 420, 240, 50], screen, img_one, img_two, self.player_two, scale=k1, hover_scale=k2
-            )
-        )
-
-        img_one, img_two, k1, k2 = self.chek_open_pl_but(self.name3)
-        self.buttons.append(
-            ImageButton(
-                [540, 420, 240, 50], screen, img_one, img_two, self.player_three, scale=k1, hover_scale=k2
-            )
-        )
-
         self.update_button()
 
-    def update_button(self):
+    def update_button(self) -> None:
         # Обновление кнопок
         font_2 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 18)
         rating = check('gameplay', 'rating')
@@ -1777,7 +1783,7 @@ class Character_Types:
             col1, col2 = (120, 120, 120), (120, 120, 120)
         self.buttons.append(
             Button(
-                [200, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_win_info_pl_one, 15,
+                [200, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_info_pl_one, 15,
                 "data/BlackOpsOne-Regular_RUS_by_alince.otf"
             )
         )
@@ -1788,7 +1794,7 @@ class Character_Types:
             col1, col2 = (120, 120, 120), (120, 120, 120)
         self.buttons.append(
             Button(
-                [450, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_win_info_pl_two, 15,
+                [450, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_info_pl_two, 15,
                 "data/BlackOpsOne-Regular_RUS_by_alince.otf"
             )
         )
@@ -1799,7 +1805,7 @@ class Character_Types:
             col1, col2 = (120, 120, 120), (120, 120, 120)
         self.buttons.append(
             Button(
-                [700, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_win_info_pl_three, 15,
+                [700, 385, 80, 22], screen, (255, 255, 255), col1, col2, 'info', self.open_info_pl_three, 15,
                 "data/BlackOpsOne-Regular_RUS_by_alince.otf"
             )
         )
@@ -2944,11 +2950,8 @@ class Gamplay:
             self.update_image()
             enemy_pos = (self.rect.x - (pos_player - pos_player_display) + self.d_x,
                          self.rect.y - (self.d_y if self.grav == 1 else 0))
-            if -self.rect.width < enemy_pos[0] < 800:
+            if -(self.rect.width + abs(self.d_x)) < enemy_pos[0] < 800:
                 self.screen.blit(self.image, enemy_pos)
-
-            pygame.draw.rect(self.screen, (0, 0, 0), (
-                self.rect.x - (pos_player - pos_player_display), self.rect.y, self.rect.width, self.rect.height), 1)
 
             if self.cn:
                 self.coin.update()
@@ -3209,7 +3212,7 @@ class Gamplay:
             self.x, self.screen, self.hp, self.max_hp, self.speed, self.tiles = None, None, None, None, None, None
             self.gravity, self.numb, self.delay, self.jump_height, self.damage = None, None, None, None, None
             self.animation_frames, self.function_reference, self.image, self.rect = None, None, None, None
-            self.d_x, self.name, self.mask = None, None, None
+            self.d_x, self.name, self.mask, self.d_y = None, None, None, None
 
         def definition_character(self, name, screen, cords, tiles, numb, function_reference):
 
@@ -3257,7 +3260,6 @@ class Gamplay:
 
         def draw(self):
             self.screen.blit(self.image, (self.x + self.d_x, self.rect.y - (self.d_y if self.grav == 1 else 0)))
-            pygame.draw.rect(self.screen, (0, 0, 0), (self.x, self.rect.y, 50, self.rect.height), 2)
 
         def get_current_image(self):
             """
@@ -3508,16 +3510,20 @@ class Result:
         self.screen = screen
         self.background = pygame.image.load("images/background/background.png").convert()
 
+        self.time, self.mobs, self.coins, self.res, self.rat, self.name_level = None, None, None, None, None, None
+        self.button2, self.button1 = None, None
+        self.name_card, self.font = None, None
+        self.confetti = []
+
+        self.update_button()
+
+    def update_button(self):
         self.button1 = Button(
             [60, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Restart', self.restart, 30
         )
         self.button2 = Button(
             [540, 520, 200, 50], screen, (255, 255, 255), (255, 0, 0), (105, 105, 105), 'Menu', self.return_menu, 30
         )
-
-        self.time, self.mobs, self.coins, self.res, self.rat, self.name_level = None, None, None, None, None, None
-        self.name_card, self.font = None, None
-        self.confetti = []
 
     def return_menu(self):
         start_screen()
@@ -3526,14 +3532,15 @@ class Result:
         transit('fl_menu')
         screen_change('fl_menu', 'transition')
 
+        self.update_button()
+
     def restart(self):
         loading()
         transit('loading_screen')
         screen_change('character_types', 'transition')
 
-        thread = threading.Thread(target=play_game)
-        thread.daemon = True
-        thread.start()
+        character_update_but()
+        self.update_button()
 
     def draw(self):
         self.screen.fill((0, 0, 0))
@@ -3616,7 +3623,8 @@ class Result:
                     catering_coefficients_cards[self.name_card]), 0)
 
         recording_data(rating, self.coins, self.name_card, self.res)
-        time_check(self.name_card, self.time)
+        if self.res == 'win':
+            time_check(self.name_card, self.time)
 
         return rating
 
