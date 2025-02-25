@@ -9,7 +9,7 @@ from scr.constants import (
     rating_cost, belonging_to_level, portal_cords, spawn_coordinates, type_card_background, maximum_improvement,
     catering_coefficients_levels, catering_coefficients_cards, opening_levels, range_rating, map_index, level_map,
     rating_character, list_name_card, spavn_mobs, list_tiles, animation_frames_character, animations_mob,
-    coin_animation, character_level, level_improvement, x_offset_characters, x_offset_mobs
+    coin_animation, character_level, level_improvement, x_offset_characters, x_offset_mobs, character_genitive
 )
 
 import pygame
@@ -65,6 +65,15 @@ def setting_value(key, name) -> None:
 
 def determination_levels():
     levels_selection.creating_buttons()
+
+
+def play_musik():
+    print(1)
+    pygame.mixer.music.load(f'data/file_music/background_music/{randint(0, 6)}.mp3')
+    pygame.mixer.music.set_volume(check('audio', 'music_volume'))
+    pygame.mixer.music.play(-1)
+    if not check('audio', 'mute_music'):
+        pygame.mixer.music.pause()
 
 
 def loading(fl=False):
@@ -230,7 +239,7 @@ def music_menu() -> None:
     pass
     """
 
-    pygame.mixer.music.load('data/file_music/music_menu.mp3')
+    pygame.mixer.music.load(f'data/file_music/music_menu_{randint(0, 1)}.mp3')
     pygame.mixer.music.set_volume(check('audio', 'music_volume'))
     pygame.mixer.music.play(-1)
     if not check('audio', 'mute_music'):
@@ -1879,12 +1888,11 @@ class LoadingScreen:
 
         time.sleep(0.03)
         self.step += randint(1, 2)
-        # if self.step == 14:
-        #     play_game()
         if self.step > 20 and self.fl:
+            pygame.mixer.music.stop()
+            play_musik()
             transit('gemplay')
             screen_change('loading_screen', 'transition')
-            pygame.mixer.music.pause()
         elif self.step > 20 and not self.fl:
             music_menu()
             transit(check('screen', 'past_position'))
@@ -2157,8 +2165,19 @@ class Slider:
 
 class Improvement_character:
     def __init__(self, screen):
-        self.character, self.price = None, None
+        self.text1, self.text_r1, self.text2, self.text_r2 = None, None, None, None
+        self.text3, self.text_r3, self.text4, self.text_r4 = None, None, None, None
+
         self.damage, self.hp, self.delay = None, None, None
+        self.character, self.price = None, None
+        self.image = None
+        self.fl = None
+
+        # Создание текста - название окна
+        font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
+        self.text_surface = font.render('Improvement', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=(65, 10))
+
         self.screen = screen
         self.buttons = []
 
@@ -2168,26 +2187,40 @@ class Improvement_character:
         """
 
         self.screen.fill((0, 0, 0))
+
         for button in self.buttons:
             button.draw()
 
-    def cost_calculation(self):
-        return
+        self.screen.blit(self.text1, self.text_r1)
+        self.screen.blit(self.text2, self.text_r2)
+        self.screen.blit(self.text3, self.text_r3)
+
+        self.screen.blit(self.text4, self.text_r4)
+
+        self.screen.blit(self.image, (275 + (250 - self.image.get_width()) // 2, 122))
+        pygame.draw.rect(
+            self.screen, (0, 255, 255), [275, 100, 250, 250], 5
+        )
+
+        self.screen.blit(self.text_surface, self.text_rect)
 
     def update_button(self, name_character):
         self.buttons = []
         self.character = name_character
 
+        self.image = pygame.image.load(f'images/players/open/{name_character}.png')
+
         with open(f'data/characteristics_character/{name_character}.txt', 'r', encoding='utf8') as file:
             data = file.read().split('\n')
 
-        self.damage, self.hp, self.delay = data[1], data[0], data[4]
+        self.damage, self.hp, self.delay = int(data[1]), int(data[0]), int(data[4])
+        self.fl = [True, True, True]
 
         self.price = level_improvement[character_level[name_character]]
 
         self.buttons.append(
             ImageButton(
-                [50, 400, 200, 50], screen, f"images/buttons/price/price_{self.price}_0.png",
+                [50, 410, 200, 50], screen, f"images/buttons/price/price_{self.price}_0.png",
                 f"images/buttons/price/price_{self.price}_1.png", self.improvement_damage, scale=1.0,
                 hover_scale=1.1
             )
@@ -2195,14 +2228,14 @@ class Improvement_character:
 
         self.buttons.append(
             ImageButton(
-                [300, 400, 200, 50], screen, f"images/buttons/price/price_{self.price}_0.png",
+                [300, 410, 200, 50], screen, f"images/buttons/price/price_{self.price}_0.png",
                 f"images/buttons/price/price_{self.price}_1.png", self.improvement_hp, scale=1.0, hover_scale=1.1
             )
         )
 
         self.buttons.append(
             ImageButton(
-                [550, 400, 200, 50], screen, f"images/buttons/price/price_{self.price}_1.png",
+                [550, 410, 200, 50], screen, f"images/buttons/price/price_{self.price}_1.png",
                 f"images/buttons/price/price_{self.price}_1.png", self.improvement_delay, scale=1.0,
                 hover_scale=1.1
             )
@@ -2214,12 +2247,54 @@ class Improvement_character:
                 "images/buttons/other/back_0.png", self.closing_window, scale=1.0, hover_scale=1.1
             )
         )
+
         self.buttons.append(
             ImageButton(
-                [55, 500, 210, 50], screen, "images/buttons/other/settings_0.png",
+                [40, 500, 210, 50], screen, "images/buttons/other/settings_0.png",
                 "images/buttons/other/settings_1.png", self.open_setting, scale=1.0, hover_scale=1.1
             )
         )
+
+        self.update_text()
+
+    def update_text(self):
+        data = self.read_data()
+
+        font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 20)
+
+        max_damage = maximum_improvement[self.character]['damage']
+        if self.damage >= max_damage:
+            self.buttons[0] = ImageButton(
+                [50, 410, 200, 50], screen, f"images/buttons/price/max.png", f"images/buttons/price/max.png",
+                self.improvement_damage, scale=1.1, hover_scale=1.1
+            )
+            self.fl[0] = False
+        self.text1 = font.render(f"Урон: {data[1]}", True, (255, 255, 255))
+        self.text_r1 = self.text1.get_rect(center=(150, 390))
+
+        max_hp = maximum_improvement[self.character]['hp']
+        if self.hp >= max_hp:
+            self.buttons[1] = ImageButton(
+                [300, 410, 200, 50], screen, f"images/buttons/price/max.png", f"images/buttons/price/max.png",
+                self.improvement_hp, scale=1.1, hover_scale=1.1
+            )
+            self.fl[1] = False
+        self.text2 = font.render(f"Здоровье: {data[0]}", True, (255, 255, 255))
+        self.text_r2 = self.text2.get_rect(center=(400, 390))
+
+        max_delay = maximum_improvement[self.character]['delay']
+        if self.delay >= max_delay:
+            self.buttons[2] = ImageButton(
+                [550, 410, 200, 50], screen, f"images/buttons/price/max.png", f"images/buttons/price/max.png",
+                self.improvement_delay, scale=1.1, hover_scale=1.1
+            )
+            self.fl[2] = False
+        self.text3 = font.render(f"Перезарядка: {data[4]}", True, (255, 255, 255))
+        self.text_r3 = self.text3.get_rect(center=(650, 390))
+
+        font1 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 30)
+        self.text4 = font1.render(f"Прокачка {character_genitive[self.character]}", True, (200, 0, 200))
+        self.text_r4 = self.text4.get_rect(center=(400, 50))
 
     def closing_window(self) -> None:
         """
@@ -2237,6 +2312,8 @@ class Improvement_character:
 
         transit('settings')
         screen_change('improvement_character', 'transition')
+
+        # Обновление кнопок
         self.update_button(self.character)
 
     def improvement_damage(self):
@@ -2244,33 +2321,36 @@ class Improvement_character:
 
         if check('gameplay', 'coins') > self.price:
             if self.damage < max_damage:
+                data = self.read_data()
                 self.damage += 1
+                data[1] = self.damage
+                self.write_data([str(i) + '\n' for i in data[:-1]] + [data[-1]])
 
-        data = self.read_data()
-        data[1] = self.damage
-        self.write_data([i + '\n' for i in data[:-1]] + [data[-1]])
+                self.update_text()
 
     def improvement_hp(self):
         max_hp = maximum_improvement[self.character]['hp']
 
         if check('gameplay', 'coins') > self.price:
             if self.hp < max_hp:
+                data = self.read_data()
                 self.hp += 1
+                data[0] = str(self.hp)
+                self.write_data([str(i) + '\n' for i in data[:-1]] + [data[-1]])
 
-        data = self.read_data()
-        data[0] = self.hp
-        self.write_data([i + '\n' for i in data[:-1]] + [data[-1]])
+                self.update_text()
 
     def improvement_delay(self):
         max_delay = maximum_improvement[self.character]['delay']
 
         if check('gameplay', 'coins') > self.price:
             if self.delay < max_delay:
+                data = self.read_data()
                 self.delay += 1
+                data[4] = self.delay
+                self.write_data([str(i) + '\n' for i in data[:-1]] + [data[-1]])
 
-        data = self.read_data()
-        data[4] = self.delay
-        self.write_data([i + '\n' for i in data[:-1]] + [data[-1]])
+                self.update_text()
 
     def read_data(self):
         with open(f'data/characteristics_character/{self.character}.txt', 'r', encoding='utf8') as file:
@@ -2287,8 +2367,12 @@ class Improvement_character:
         Метод проверки событий
         """
 
-        for button in self.buttons:
-            button.handle_event(event)
+        for button in range(len(self.buttons)):
+            if button < 3:
+                if self.fl[button]:
+                    self.buttons[button].handle_event(event)
+            else:
+                self.buttons[button].handle_event(event)
 
 
 class ScreenTransition:
@@ -2508,7 +2592,12 @@ class Playear_info:
 
         self.text1, self.text_r1, self.text2, self.text_r2, self.text3 = None, None, None, None, None
         self.text_r3, self.text4, self.text_r4, self.text5, self.text_r5 = None, None, None, None, None
-        self.text6, self.text_r6 = None, None
+        self.text6, self.text_r6, self.text7, self.text_r7 = None, None, None, None
+
+        # Создание текста - название окна
+        font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
+        self.text_surface = font.render('Information', True, (255, 255, 255))
+        self.text_rect = self.text_surface.get_rect(center=(58, 10))
 
     def draw(self):
         self.screen.fill((0, 0, 0))
@@ -2523,6 +2612,9 @@ class Playear_info:
         self.screen.blit(self.text4, self.text_r4)
         self.screen.blit(self.text5, self.text_r5)
         self.screen.blit(self.text6, self.text_r6)
+        self.screen.blit(self.text7, self.text_r7)
+
+        self.screen.blit(self.text_surface, self.text_rect)
 
         for button in self.buttons:
             button.draw()
@@ -2604,6 +2696,11 @@ class Playear_info:
         self.text6 = font2.render(f'Задержка: {"{:.2f}".format(date[4] / 60)} сек', True, (255, 0, 255))
         self.text_r6 = self.text6.get_rect(center=(300, 360))
 
+        font3 = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 30)
+
+        self.text7 = font3.render(f'Информация о персонаже', True, (255, 255, 255))
+        self.text_r7 = self.text6.get_rect(center=(320, 40))
+
     def check_event(self, event) -> None:
         """
         Метод проверки событий
@@ -2637,7 +2734,8 @@ class Gamplay:
         self.name_card = check('gameplay', 'name_card')
         type_card = check('gameplay', 'type_card')
         self.background_map = pygame.transform.scale(
-            pygame.image.load(type_card_background[type_card]).convert_alpha(), (800, 600))
+            pygame.image.load(type_card_background[type_card]).convert_alpha(), (800, 600)
+        )
         self.tiles = pygame.sprite.Group()
         self.generate_map(type_card)
         self.creating_enemy()
@@ -3761,7 +3859,7 @@ if __name__ == '__main__':
     start_screen()
 
     pygame.init()
-    sound = pygame.mixer.Sound("data/file_music/button_sound.wav")
+    sound = pygame.mixer.Sound("data/file_music/button_sound.mp3")
     sound.set_volume(check('audio', 'sound_volume') if check('audio', 'mute_sound') else 0)
 
     screen = pygame.display.set_mode((width, height), flags=pygame.NOFRAME)

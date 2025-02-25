@@ -24,13 +24,13 @@
     "name_card": "",
     "type_card": "tundra",
     "character": "",
-    "rating": 20891,
+    "rating": 21272,
     "coins": 4,
     "improvement_character": ""
   },
   "audio": {
-    "music_volume": 0.6,
-    "sound_volume": 0.6,
+    "music_volume": 0.2,
+    "sound_volume": 0.2,
     "mute_music": true,
     "mute_sound": true
   },
