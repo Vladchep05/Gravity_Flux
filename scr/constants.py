@@ -54,6 +54,18 @@ list_tiles = [
     'snow'
 ]
 
+attack_soun = {
+    'Блейв': 'data/file_music/character/attack/2.mp3',
+    'Элиза': 'data/file_music/character/attack/6.mp3',
+    'Кассиан': 'data/file_music/character/attack/5.mp3',
+    'Рен': 'data/file_music/character/attack/1.mp3',
+    'Келтор': 'data/file_music/character/attack/6.mp3',
+    'Золтан': 'data/file_music/character/attack/4.mp3',
+    'Финн': 'data/file_music/character/attack/9.mp3',
+    'Лиам': 'data/file_music/character/attack/7.mp3',
+    'Эйден': 'data/file_music/character/attack/8.mp3'
+}
+
 x_offset_mobs = {
     0: {
         'left': {
@@ -290,50 +302,50 @@ list_name_card = [
 
 maximum_improvement = {
     'Блейв': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
+        'damage': 3,
+        'hp': 20,
+        'delay': 64
     },
     'Элиза': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
+        'damage': 4,
+        'hp': 23,
+        'delay': 62
     },
     'Кассиан': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
+        'damage': 5,
+        'hp': 26,
+        'delay': 60
     },
     'Рен': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
+        'damage': 6,
+        'hp': 29,
+        'delay': 58
     },
     'Келтор': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
+        'damage': 7,
+        'hp': 32,
+        'delay': 56
     },
     'Золтан': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
+        'damage': 8,
+        'hp': 35,
+        'delay': 54
     },
     'Финн': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
+        'damage': 9,
+        'hp': 38,
+        'delay': 52
     },
     'Лиам': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
+        'damage': 10,
+        'hp': 42,
+        'delay': 50
     },
     'Эйден': {
-        'damage': 2,
-        'hp': 3,
-        'delay': 3
-    },
+        'damage': 11,
+        'hp': 46,
+        'delay': 48
+    }
 }
 
 spavn_mobs = {
@@ -366,10 +378,10 @@ spavn_mobs = {
                          ]
                      ],
                      [
-                         1, 3
+                         1, 1
                      ],
                      [
-                         3, 5
+                         4, 9
                      ]
                      ],
     'Прогулка по роще': [4,
@@ -397,10 +409,10 @@ spavn_mobs = {
                              ]
                          ],
                          [
-                             2, 5
+                             1, 2
                          ],
                          [
-                             4, 6
+                             6, 11
                          ]
                          ],
     'Рассветный путь': [4,
@@ -422,10 +434,10 @@ spavn_mobs = {
                             ]
                         ],
                         [
-                            3, 5
+                            1, 3
                         ],
                         [
-                            5, 7
+                            8, 13
                         ]
                         ],
     'Встреча ветров': [7,
@@ -468,10 +480,10 @@ spavn_mobs = {
                            ]
                        ],
                        [
-                           4, 6
+                           2, 3
                        ],
                        [
-                           6, 8
+                           10, 15
                        ]
                        ],
     'Зеленый лабиринт': [8,
@@ -517,10 +529,10 @@ spavn_mobs = {
                              ]
                          ],
                          [
-                             5, 7
+                             2, 4
                          ],
                          [
-                             7, 9
+                             12, 17
                          ]
                          ],
     'Скалистый склон': [9,
@@ -566,10 +578,10 @@ spavn_mobs = {
                             ]
                         ],
                         [
-                            6, 8
+                            3, 5
                         ],
                         [
-                            8, 10
+                            14, 19
                         ]
                         ],
     'Заточенные пики': [10,
@@ -618,10 +630,10 @@ spavn_mobs = {
                             ]
                         ],
                         [
-                            5, 9
+                            4, 6
                         ],
                         [
-                            9, 11
+                            16, 21
                         ]
                         ],
     'Тень дракона': [12,
@@ -691,10 +703,10 @@ spavn_mobs = {
                          ]
                      ],
                      [
-                         6, 9
+                         4, 7
                      ],
                      [
-                         10, 12
+                         18, 23
                      ]
                      ],
     'Дыхание вечного': [13,
@@ -746,10 +758,10 @@ spavn_mobs = {
                             ]
                         ],
                         [
-                            7, 9
+                            5, 7
                         ],
                         [
-                            11, 13
+                            20, 25
                         ]
                         ]
 }
