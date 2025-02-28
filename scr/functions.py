@@ -4,7 +4,9 @@ from random import randint
 import pygame
 import json
 
-from scr.constants import level_map, belonging_to_level
+from scr.constants import (
+    rating_cost, rating_character, level_map, belonging_to_level, map_index
+)
 
 
 def check(name1, name2) -> int | str:
@@ -88,6 +90,17 @@ def determination_levels() -> None:
 
     # Вызов метода creating_buttons() объекта levels_selection
     levels_selection.creating_buttons()
+
+
+def update_text_info(name):
+    """
+    Функция Обновления характеристик персонажа
+    """
+
+    from scr.classes import pl_info
+
+    # Вызов метода update() объекта pl_info
+    pl_info.update(name)
 
 
 def play_musik() -> None:
@@ -448,10 +461,6 @@ def volume_change(value, name) -> None:
     # Если name == 'music_volume', изменяет громкость музыки pygame.mixer.music.set_volume()
     if name == 'music_volume':
         pygame.mixer.music.set_volume(data['audio']['music_volume'])
-
-    # Если name == 'sound_volume', изменяет громкость звуков sound.set_volume()
-    elif name == 'sound_volume':
-        sound.set_volume(data['audio']['sound_volume'])
 
     # Открытие data/data.json в режиме записи
     with open('data/data.json', 'w', encoding='utf8') as file:

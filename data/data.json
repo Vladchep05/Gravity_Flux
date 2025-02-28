@@ -25,14 +25,14 @@
     "type_card": "",
     "character": "",
     "rating": 0,
-    "coins": 1,
+    "coins": 0,
     "improvement_character": ""
   },
   "audio": {
     "music_volume": 0.6,
     "sound_volume": 0.6,
-    "mute_music": false,
-    "mute_sound": false
+    "mute_music": true,
+    "mute_sound": true
   },
   "open_characters": {
     "\u0411\u043b\u0435\u0439\u0432": true,

@@ -10,7 +10,7 @@ from scr.functions import (
     check, check_levels, transit, check_open_cards, setting_value, determination_levels, play_musik, loading,
     time_check, card_selection_easy, card_selection_normal, card_selection_hard, play_game, screen_change,
     start_screen, recording_data, music_menu, player_inform, update_improvement, res_loss, res_win, volume_change,
-    on_off_playback_music, character_update_but, factory_reset
+    on_off_playback_music, character_update_but, factory_reset, update_text_info
 )
 
 from scr.constants import (
@@ -2173,6 +2173,7 @@ class Improvement_character:
         self.text3, self.text_r3, self.text4, self.text_r4 = None, None, None, None
         self.text5, self.text_r5 = None, None
 
+        self.number_coins, self.number_coins_r = None, None
         self.damage, self.hp, self.delay = None, None, None
         self.character, self.price = None, None
         self.fl_lack_coins = None
@@ -2183,6 +2184,8 @@ class Improvement_character:
         font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 15)
         self.text_surface = font.render('Improvement', True, (255, 255, 255))
         self.text_rect = self.text_surface.get_rect(center=(65, 10))
+
+        self.img_coin = pygame.transform.scale(pygame.image.load('images/coin/0.png'), (32, 32))
 
         self.screen = screen
         self.buttons = []
@@ -2205,6 +2208,12 @@ class Improvement_character:
         self.screen.blit(self.text3, self.text_r3)
 
         self.screen.blit(self.text4, self.text_r4)
+
+        # Отрисовка изображения монеты
+        self.screen.blit(self.img_coin, (8, 25))
+
+        # Отрисовка количество монет
+        self.screen.blit(self.number_coins, self.number_coins_r)
 
         # Отображение изображения персонажа
         self.screen.blit(self.image, (275 + (250 - self.image.get_width()) // 2, 122))
@@ -2296,6 +2305,10 @@ class Improvement_character:
 
         font = pygame.font.Font("data/BlackOpsOne-Regular_RUS_by_alince.otf", 20)
 
+        # Создание текста - количество монет на данный момент
+        self.number_coins = font.render(f'{check("gameplay", "coins")}', True, (255, 255, 255))
+        self.number_coins_r = self.number_coins.get_rect(topleft=(43, 30))
+
         # Изменение кнопок, если макчимальные характеристики и вывод текста при нехватке монет
         max_damage = maximum_improvement[self.character]['damage']
         if self.damage >= max_damage:
@@ -2341,6 +2354,9 @@ class Improvement_character:
         transit('info_player')
         screen_change('improvement_character', 'transition')
 
+        # Обновление текстак характеристик окна тнформации
+        update_text_info(self.character)
+
     def open_setting(self) -> None:
         """
         Метод открытия настроек
@@ -2359,7 +2375,7 @@ class Improvement_character:
 
         max_damage = maximum_improvement[self.character]['damage']
 
-        if check('gameplay', 'coins') > self.price:
+        if check('gameplay', 'coins') >= self.price:
             self.fl_lack_coins = False
             if self.damage < max_damage:
                 data = self.read_data()
@@ -2378,7 +2394,7 @@ class Improvement_character:
     def improvement_hp(self):
         max_hp = maximum_improvement[self.character]['hp']
 
-        if check('gameplay', 'coins') > self.price:
+        if check('gameplay', 'coins') >= self.price:
             self.fl_lack_coins = False
             if self.hp < max_hp:
                 data = self.read_data()
@@ -2397,7 +2413,7 @@ class Improvement_character:
     def improvement_delay(self) -> None:
         max_delay = maximum_improvement[self.character]['delay']
 
-        if check('gameplay', 'coins') > self.price:
+        if check('gameplay', 'coins') >= self.price:
             self.fl_lack_coins = False
             if self.delay > max_delay:
                 data = self.read_data()
@@ -4168,7 +4184,7 @@ class Gamplay:
             self.gravity, self.numb, self.delay, self.jump_height, self.damage = None, None, None, None, None
             self.animation_frames, self.function_reference, self.image, self.rect = None, None, None, None
             self.d_x, self.name, self.mask, self.d_y, self.sound_attack = None, None, None, None, None
-            self.sound_jump, self.sound_death = None, None
+            self.sound_jump, self.sound_death, self.sound_change_gravity = None, None, None
 
         def definition_character(self, name, screen, cords, tiles, numb, function_reference, type_card) -> None:
             """
@@ -4244,8 +4260,7 @@ class Gamplay:
             self.sound_attack = pygame.mixer.Sound(attack_soun[self.name])
 
             # Установка громкости
-            self.sound_attack.set_volume(
-                check('audio', 'sound_volume') if check('audio', 'mute_sound') else 0)
+            self.sound_attack.set_volume(check('audio', 'sound_volume') if check('audio', 'mute_sound') else 0)
 
             # Звук прыжка
             self.sound_jump = pygame.mixer.Sound(f'data/file_music/character/jump/{type_card}.mp3')
@@ -4258,6 +4273,12 @@ class Gamplay:
 
             # Установка громкости
             self.sound_death.set_volume(check('audio', 'sound_volume') if check('audio', 'mute_sound') else 0)
+
+            # Звук смерти
+            self.sound_change_gravity = pygame.mixer.Sound('data/file_music/character/smen_graviti/change_gravity.mp3')
+
+            # Установка громкости
+            self.sound_change_gravity.set_volume(check('audio', 'sound_volume') if check('audio', 'mute_sound') else 0)
 
             # Инициализация изображения и rect
 
@@ -4289,6 +4310,9 @@ class Gamplay:
             Проигрывает звук атаки
             """
 
+            # Установка громкости
+            self.sound_attack.set_volume(check('audio', 'sound_volume'))
+
             if check('audio', 'mute_sound'):
                 self.sound_attack.play()
 
@@ -4298,6 +4322,8 @@ class Gamplay:
             """
 
             if check('audio', 'mute_sound'):
+                # Установка громкости
+                self.sound_jump.set_volume(check('audio', 'sound_volume'))
                 self.sound_jump.play()
 
         def play_sound_death(self) -> None:
@@ -4306,7 +4332,21 @@ class Gamplay:
             """
 
             if check('audio', 'mute_sound'):
+                # Установка громкости
+                self.sound_death.set_volume(check('audio', 'sound_volume'))
+
                 self.sound_death.play()
+
+        def play_change_gravity(self):
+            """
+            Проигрывает звук смены гравитации
+            """
+
+            if check('audio', 'mute_sound'):
+                # Установка громкости
+                self.sound_change_gravity.set_volume(check('audio', 'sound_volume'))
+
+                self.sound_change_gravity.play()
 
         def play_sound_damage(self) -> None:
             """
@@ -4584,6 +4624,7 @@ class Gamplay:
 
                     # Изменение гравитации при нажатии W
                     if keys[pygame.K_w] and not self.is_jumping and self.change_graviti:
+                        self.play_change_gravity()
                         self.is_jumping = True
                         self.change_graviti = False
                         self.grav = -self.grav
