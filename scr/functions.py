@@ -5,7 +5,7 @@ import pygame
 import json
 
 from scr.constants import (
-    rating_cost, rating_character, level_map, belonging_to_level, map_index
+    rating_cost, rating_character, level_map, belonging_to_level, map_index, opening_levels
 )
 
 
